@@ -1,0 +1,12 @@
+{
+  "name": "mod-squad",
+  "owner": { "name": "Troy Lorents" },
+  "metadata": { "description": "Claude Code mods: live panes, guards and model routing." },
+  "plugins": [
+    {
+      "name": "model-router",
+      "source": "./mods/model-router",
+      "description": "Routes each turn to the cheapest model + effort that fits, with a live cost-ladder pane."
+    }
+  ]
+}
