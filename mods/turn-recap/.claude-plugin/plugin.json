@@ -1,0 +1,20 @@
+{
+  "name": "turn-recap",
+  "version": "0.1.0",
+  "description": "Adds a one-line TL;DR beneath long answers, written by a quick Haiku 5.5 call.",
+  "author": { "name": "Troy Lorents" },
+  "userConfig": {
+    "minChars": {
+      "type": "number",
+      "title": "Minimum answer length (characters)",
+      "description": "Recap an answer at least this long.",
+      "default": 1200
+    },
+    "minSeconds": {
+      "type": "number",
+      "title": "Minimum turn length (seconds)",
+      "description": "Also recap any answer whose turn ran at least this long.",
+      "default": 90
+    }
+  }
+}

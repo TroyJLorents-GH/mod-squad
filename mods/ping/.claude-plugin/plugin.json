@@ -1,0 +1,20 @@
+{
+  "name": "ping",
+  "version": "0.1.0",
+  "description": "Plays a chime and shows a toast when a long turn finishes (or Claude is waiting on your approval), so you can walk away.",
+  "author": { "name": "Troy Lorents" },
+  "userConfig": {
+    "minSeconds": {
+      "type": "number",
+      "title": "Minimum turn length (seconds)",
+      "description": "Only ping for turns that ran at least this long.",
+      "default": 30
+    },
+    "sound": {
+      "type": "boolean",
+      "title": "Play sound",
+      "description": "Play a chime as well as the toast. Off: toast only.",
+      "default": true
+    }
+  }
+}

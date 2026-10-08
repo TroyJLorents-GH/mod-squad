@@ -1,0 +1,21 @@
+{
+  "name": "safety-net",
+  "version": "0.1.0",
+  "description": "Blocks destructive tool calls before they run (force pushes, rm -rf outside the project, DROP TABLE, terraform destroy, writes to .env and keys, ...) and explains why.",
+  "author": { "name": "Troy Lorents" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "extraProtected": {
+      "type": "string",
+      "title": "Extra protected files",
+      "description": "Comma-separated glob patterns for more files Claude may not edit, e.g. \"config/prod.*, **/*.tfstate\". A pattern without a slash matches the file name.",
+      "default": ""
+    },
+    "allowForceWithLease": {
+      "type": "boolean",
+      "title": "Allow git push --force-with-lease",
+      "description": "Let the safer lease-checked force push through. Plain --force is always blocked.",
+      "default": true
+    }
+  }
+}

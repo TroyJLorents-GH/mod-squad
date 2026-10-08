@@ -1,12 +1,41 @@
 {
   "name": "mod-squad",
-  "owner": { "name": "Troy Lorents" },
-  "metadata": { "description": "Claude Code mods: live panes, guards and model routing." },
+  "owner": {
+    "name": "Troy Lorents"
+  },
+  "metadata": {
+    "description": "Claude Code mods: live panes, guards and model routing."
+  },
   "plugins": [
     {
       "name": "model-router",
       "source": "./mods/model-router",
       "description": "Routes each turn to the cheapest model + effort that fits, with a live cost-ladder pane."
+    },
+    {
+      "name": "context-gauge",
+      "source": "./mods/context-gauge",
+      "description": "A band above the prompt showing how full the context window is, with a nudge to compact."
+    },
+    {
+      "name": "safety-net",
+      "source": "./mods/safety-net",
+      "description": "Blocks destructive shell commands and writes to secret files before they run."
+    },
+    {
+      "name": "secret-scrubber",
+      "source": "./mods/secret-scrubber",
+      "description": "Redacts API keys and tokens from tool output before the transcript and the model see them."
+    },
+    {
+      "name": "turn-recap",
+      "source": "./mods/turn-recap",
+      "description": "Adds a one-line TL;DR, written by Haiku 5.5, under long answers."
+    },
+    {
+      "name": "ping",
+      "source": "./mods/ping",
+      "description": "A chime and a toast when a long turn finishes or is waiting for your approval."
     }
   ]
 }

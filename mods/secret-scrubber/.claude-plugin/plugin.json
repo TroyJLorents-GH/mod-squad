@@ -1,0 +1,15 @@
+{
+  "name": "secret-scrubber",
+  "version": "0.1.0",
+  "description": "Redacts API keys, tokens, private keys and .env secrets from tool output before the transcript stores it and before the model reads it.",
+  "author": { "name": "Troy Lorents" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "extraPatterns": {
+      "type": "string",
+      "title": "Extra patterns",
+      "description": "Comma-separated extra regular expressions to redact as [REDACTED:custom]. Invalid ones are ignored (a toast names them).",
+      "default": ""
+    }
+  }
+}

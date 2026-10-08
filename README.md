@@ -19,9 +19,14 @@
 
 | Mod | What it does |
 | --- | --- |
-| [`model-router`](mods/model-router)  | Picks the cheapest model + effort for every turn (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and draws a live green → red cost ladder in a side pane. |
+| [`model-router`](mods/model-router) | Picks the cheapest model + effort for every turn (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and draws a live green → red cost ladder in a side pane. |
+| [`context-gauge`](mods/context-gauge) | A band above the prompt: how full the context window is, shading green → red, with a toast before it fills up. |
+| [`safety-net`](mods/safety-net) | Blocks force-pushes, `git reset --hard`, `rm -rf ~`, `terraform destroy`, `curl \| sh` and writes to `.env` / keys, and tells the model why. |
+| [`secret-scrubber`](mods/secret-scrubber) | Redacts AWS, GitHub, Anthropic, OpenAI, Azure, Slack, Stripe and Google keys, JWTs and private keys from tool output before anything stores or reads it. |
+| [`turn-recap`](mods/turn-recap) | A one-line TL;DR under long answers, written by Haiku 5.5 for a fraction of a cent. |
+| [`ping`](mods/ping) | A chime + toast when a long turn finishes or is waiting for your approval, so you can walk away. |
 
-More on the way.
+Install one, or all six: `/plugin install model-router@mod-squad`, `/plugin install safety-net@mod-squad`, ...
 
 ### model-router
 

@@ -1,0 +1,15 @@
+{
+  "name": "context-gauge",
+  "version": "0.1.0",
+  "description": "A band above the prompt showing how full the context window is, shading green → orange → red, with a nudge to /compact as it nears the limit.",
+  "author": { "name": "Troy Lorents" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "warnAt": {
+      "type": "number",
+      "title": "Warn at (%)",
+      "description": "Context fill at which the bar turns red, adds a '/compact soon' hint and raises a one-time toast. A second toast fires at 90%.",
+      "default": 80
+    }
+  }
+}
