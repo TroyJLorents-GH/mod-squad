@@ -18,8 +18,8 @@
 ## The squad
 
 | Mod | What it does |
-| --- | --- |
-| [`model-router`](mods/model-router) | Picks the cheapest model + effort for every turn (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and draws a live green → red cost ladder in a side pane. |
+| :----: | :---: |
+| [`model-router`](mods/model-router)  | Picks the cheapest model + effort for every turn (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and draws a live green → red cost ladder in a side pane. |
 
 More on the way.
 
