@@ -4,8 +4,11 @@ Routes each Claude Code turn to the cheapest model + effort that fits the task
 (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and shows the cost ladder in a side pane.
 
 ```
-/plugin install model-router --marketplace troyjlorents-gh/mod-squad
+/plugin marketplace add troyjlorents-gh/mod-squad
+/plugin install model-router@mod-squad
 ```
+
+![model-router pane](../../docs/model-router-pane.png)
 
 - **Pick:** Haiku 5.5 grades each prompt (keyword rules as fallback). Mid-turn it only moves up: risky shell commands (`terraform apply`, `kubectl apply`, `rm -rf`, ...), every 2nd failed tool call, 6+ files edited.
 - **Cache-aware:** while the prompt cache is warm it only steps down when the new pick is `stickiness` dots lower.
