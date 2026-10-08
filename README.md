@@ -1,16 +1,9 @@
 <p align="center">
+  <img src="docs/mod-squad-logo.png" alt="MOD-SQUAD" width="720">
+</p>
 
-```
-███╗   ███╗ ██████╗ ██████╗       ███████╗ ██████╗ ██╗   ██╗ █████╗ ██████╗ 
-████╗ ████║██╔═══██╗██╔══██╗      ██╔════╝██╔═══██╗██║   ██║██╔══██╗██╔══██╗
-██╔████╔██║██║   ██║██║  ██║█████╗███████╗██║   ██║██║   ██║███████║██║  ██║
-██║╚██╔╝██║██║   ██║██║  ██║╚════╝╚════██║██║▄▄ ██║██║   ██║██╔══██║██║  ██║
-██║ ╚═╝ ██║╚██████╔╝██████╔╝      ███████║╚██████╔╝╚██████╔╝██║  ██║██████╔╝
-╚═╝     ╚═╝ ╚═════╝ ╚═════╝       ╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚═╝  ╚═╝╚═════╝ 
-                                                                           
-
-**Small mods for [Claude Code](https://claude.com/claude-code): live panes, guards and smarter defaults.**
-```
+<p align="center">
+  <b>Small mods for <a href="https://claude.com/claude-code">Claude Code</a>: live panes, guards and smarter defaults.</b>
 </p>
 
 > The mod API is early access and may change between Claude Code releases. Mods run in the Claude Code terminal; they are installed from a terminal session.
