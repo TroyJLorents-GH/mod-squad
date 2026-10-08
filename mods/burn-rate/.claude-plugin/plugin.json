@@ -1,0 +1,16 @@
+{
+  "name": "burn-rate",
+  "version": "0.1.0",
+  "description": "A terminal cost dashboard (/burn): spend by day, project, model, activity, tools, shell commands and MCP servers, read from your local Claude Code transcripts and estimated at list price.",
+  "author": { "name": "Troy Lorents" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "defaultRange": {
+      "type": "string",
+      "title": "Default range",
+      "description": "The date range /burn opens on until you pick another in the pane.",
+      "options": ["today", "7d", "30d", "month", "6m", "lifetime"],
+      "default": "7d"
+    }
+  }
+}

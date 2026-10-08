@@ -13,6 +13,11 @@
       "description": "Routes each turn to the cheapest model + effort that fits, with a live cost-ladder pane."
     },
     {
+      "name": "burn-rate",
+      "source": "./mods/burn-rate",
+      "description": "A cost dashboard in your terminal: spend by day, project, model, activity and tool, read from your local Claude Code logs."
+    },
+    {
       "name": "context-gauge",
       "source": "./mods/context-gauge",
       "description": "A band above the prompt showing how full the context window is, with a nudge to compact."
