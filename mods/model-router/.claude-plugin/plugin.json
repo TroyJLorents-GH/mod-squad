@@ -1,6 +1,6 @@
 {
   "name": "model-router",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Routes each turn to the cheapest model + effort that fits the task (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and shows the ladder in a side pane.",
   "author": { "name": "Troy Lorents" },
   "types": "./types/index.d.ts",
@@ -18,6 +18,13 @@
       "description": "Cost cap: the router never picks a model above this one.",
       "options": ["haiku", "sonnet", "opus", "fable"],
       "default": "fable"
+    },
+    "band": {
+      "type": "string",
+      "title": "Ladder band above the prompt",
+      "description": "auto: a one-line ladder above the prompt where side panes aren't drawn (the desktop app). always: on every surface. never: side pane only.",
+      "options": ["auto", "always", "never"],
+      "default": "auto"
     },
     "stickiness": {
       "type": "number",

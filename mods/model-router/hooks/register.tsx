@@ -32,7 +32,7 @@ const lastTurn = atom({ plugin: 'model-router', key: 'lastTurn' } as const, null
 const sessionUsd = atom({ plugin: 'model-router', key: 'sessionUsd' } as const, 0)
 const pin = atom({ plugin: 'model-router', key: 'pin' } as const, rungOf('opus', 'medium'))
 
-type Options = { classifier?: string; ceiling?: string; stickiness?: number }
+type Options = { classifier?: string; ceiling?: string; stickiness?: number; band?: string }
 
 async function setMode($: EngineInterface, next: Mode, pinned?: number) {
   await update($, mode, () => next)
@@ -200,9 +200,55 @@ export const register: Register = (on, options) => {
 
     const d = await read($, decision)
     const a = await read($, active)
-    await $.ui.open({ id: PANE, title: 'Model router' })
+    const opened = await $.ui.open({ id: PANE, title: 'Model router' }).catch(() => null)
     const now = a === null ? 'nothing yet' : labelAt(a)
-    return { text: `Model router (${await read($, mode)}): ${now}${d ? ` — ${d.source}: ${d.reason}` : ''}` }
+    const why = opened && !opened.isPlaced ? `\nSide pane not drawn here: ${opened.reason}. The ladder shows above the prompt instead (set band to "always" to force it).` : ''
+    return { text: `Model router (${await read($, mode)}): ${now}${d ? ` — ${d.source}: ${d.reason}` : ''}${why}` }
+  })
+
+  // One-line ladder above the prompt, for surfaces that draw no side pane (the desktop app).
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const wantsBand = opts.band === 'always' || (opts.band !== 'never' && e.surface !== 'terminal')
+    const m = await read($, mode)
+    if (!wantsBand || e.props.hasSurvey || m === 'off') return next(e)
+
+    const { Box, Text } = $.ui.resolve(e)
+    const a = await read($, active)
+    const d = await read($, decision)
+    const last = await read($, lastTurn)
+    const total = await read($, sessionUsd)
+    const wide = e.props.bodyColumns >= 80
+
+    return (
+      <Box gap={2} flexWrap="wrap">
+        <Text dimColor>router</Text>
+        {MODELS.map((model, mi) => (
+          <Box>
+            <Text bold={a !== null && modelAt(a).key === model.key} dimColor={a === null || modelAt(a).key !== model.key}>
+              {model.label.split(' ')[0]}{' '}
+            </Text>
+            {EFFORTS.map((_, ei) => {
+              const rung = mi * EFFORTS.length + ei
+              const isLit = a !== null && rung <= a
+              return (
+                <Text color={isLit ? colorAt(rung) : undefined} dimColor={!isLit} bold={rung === a}>
+                  {rung === a ? '◉' : isLit ? '●' : '○'}
+                </Text>
+              )
+            })}
+          </Box>
+        ))}
+        {a === null ? (
+          <Text dimColor>{m}: waiting for the first turn</Text>
+        ) : (
+          <Text bold color={colorAt(a)}>
+            ▶ {labelAt(a)}
+          </Text>
+        )}
+        {wide && d && <Text dimColor>{d.source}: {d.reason}</Text>}
+        {wide && last && <Text dimColor>last ${last.costUsd.toFixed(3)} · session ${total.toFixed(2)}</Text>}
+      </Box>
+    )
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {

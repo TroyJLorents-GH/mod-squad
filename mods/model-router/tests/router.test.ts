@@ -9,6 +9,8 @@ function world(on: On, haikuReply?: string) {
   mock.clock(on, { now: 1_000_000 })
   mock.store(on)
   on('prompt.submit', ($, e) => ({ text: e.text }))
+  // What the engine draws when the plugin passes: nothing.
+  on('ui.render', () => ({ type: 'Box', props: {}, children: [] }) as never)
   const usage = { input_tokens: 50, output_tokens: 20, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
   on('model.complete', () => ({
     value:
@@ -95,6 +97,36 @@ describe('model-router', () => {
       expect(await ui.find({ type: 'Text', text: /Opus 5\.5 · medium/ })).toBeDefined()
       await ui.unmount()
     }
+  })
+
+  test('the ladder band draws above the prompt on desktop, not on the terminal by default', async ($, on) => {
+    world(on)
+    await $.command.run({ command: 'route', args: 'pin opus medium', origin: { kind: 'composer' }, presentation: { isFullscreen: true, columns: 200 } } as never)
+    await $.prompt.submit({ text: 'x', wait: false })
+    await drain($.turn.step(step))
+    const props = { hasSurvey: false, bodyColumns: 120, maxRows: 6 }
+    const desktop = await $.ui.mount({ plugin: 'model-router', surface: 'desktop', component: 'AbovePrompt', props } as never)
+    expect((await desktop.findAll({ type: 'Text', text: '●' })).length).toBe(11)
+    expect(await desktop.find({ type: 'Text', text: /Opus 5\.5 · medium/ })).toBeDefined()
+    await desktop.unmount()
+    const terminal = await $.ui.mount({ plugin: 'model-router', surface: 'terminal', component: 'AbovePrompt', props } as never)
+    expect(await terminal.find({ type: 'Text', text: /Opus 5\.5 · medium/ })).toBeUndefined()
+    await terminal.unmount()
+  })
+
+  test('band: always draws on the terminal too, and /route off hides it', { options: { band: 'always' } }, async ($, on) => {
+    world(on)
+    await $.command.run({ command: 'route', args: 'pin sonnet high', origin: { kind: 'composer' }, presentation: { isFullscreen: true, columns: 200 } } as never)
+    await $.prompt.submit({ text: 'x', wait: false })
+    await drain($.turn.step(step))
+    const props = { hasSurvey: false, bodyColumns: 120, maxRows: 6 }
+    const ui = await $.ui.mount({ plugin: 'model-router', surface: 'terminal', component: 'AbovePrompt', props } as never)
+    expect(await ui.find({ type: 'Text', text: /Sonnet 5\.5 · high/ })).toBeDefined()
+    await ui.unmount()
+    await $.command.run({ command: 'route', args: 'off', origin: { kind: 'composer' }, presentation: { isFullscreen: true, columns: 200 } } as never)
+    const off = await $.ui.mount({ plugin: 'model-router', surface: 'terminal', component: 'AbovePrompt', props } as never)
+    expect(await off.find({ type: 'Text', text: /Sonnet/ })).toBeUndefined()
+    await off.unmount()
   })
 
   test('heuristics and ladder helpers', async () => {
