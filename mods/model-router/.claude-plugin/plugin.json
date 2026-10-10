@@ -1,35 +1,49 @@
 {
   "name": "model-router",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Routes each turn to the cheapest model + effort that fits the task (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and shows the ladder in a side pane.",
-  "author": { "name": "Troy Lorents" },
+  "author": {
+    "name": "Troy Lorents"
+  },
   "types": "./types/index.d.ts",
   "userConfig": {
     "classifier": {
       "type": "string",
       "title": "Classifier",
       "description": "haiku: a ~1s Haiku 5.5 call grades each prompt (heuristics as fallback). heuristic: keyword/shape scoring only, zero cost.",
-      "options": ["haiku", "heuristic"],
+      "options": [
+        "haiku",
+        "heuristic"
+      ],
       "default": "haiku"
     },
     "ceiling": {
       "type": "string",
       "title": "Highest model allowed",
       "description": "Cost cap: the router never picks a model above this one.",
-      "options": ["haiku", "sonnet", "opus", "fable"],
+      "options": [
+        "haiku",
+        "sonnet",
+        "opus",
+        "fable"
+      ],
       "default": "fable"
     },
     "band": {
       "type": "string",
       "title": "Ladder band above the prompt",
       "description": "auto: a one-line ladder above the prompt where side panes aren't drawn (the desktop app). always: on every surface. never: side pane only.",
-      "options": ["auto", "always", "never"],
+      "options": [
+        "auto",
+        "always",
+        "never"
+      ],
       "default": "auto"
     },
     "stickiness": {
       "type": "number",
       "title": "Downgrade stickiness (rungs)",
-      "description": "While the prompt cache is warm, only step down the ladder when the new pick is at least this many rungs lower. Upgrades always apply.",
+      "description": "Default 3. How many dots lower a new pick must be before the router steps down while the prompt cache is warm (under 5 minutes since the last turn). 3 means it steps down only for a pick 3+ dots lower; 1 means it follows any drop; 0 turns the hold off. Upgrades always apply right away. A blank value uses the default.",
       "default": 3
     }
   }
