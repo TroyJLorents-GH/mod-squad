@@ -1,0 +1,27 @@
+{
+  "name": "standup",
+  "version": "0.1.0",
+  "description": "/standup: click Generate and get a written standup of everything you got done today, grouped by project, from your local Claude Code sessions.",
+  "author": { "name": "Troy Lorents" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "model": {
+      "type": "string",
+      "title": "Summary model",
+      "description": "The model that writes each session's summary. Default claude-haiku-5-5, the cheapest (a few cents for a busy day). Use claude-sonnet-5-5 for sharper wording. A blank value uses the default.",
+      "default": "claude-haiku-5-5"
+    },
+    "folder": {
+      "type": "string",
+      "title": "Save folder",
+      "description": "Each generated standup is also saved here as YYYY-MM-DD.md. A blank value uses ~/standups. Type off to save nothing.",
+      "default": ""
+    },
+    "maxSessions": {
+      "type": "number",
+      "title": "Most sessions per standup",
+      "description": "Default 40. The most recently active sessions are summarized first; older ones that day are skipped. A blank value uses the default.",
+      "default": 40
+    }
+  }
+}

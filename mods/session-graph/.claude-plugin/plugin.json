@@ -1,0 +1,34 @@
+{
+  "name": "session-graph",
+  "version": "0.1.0",
+  "description": "A knowledge graph across your Claude Code sessions. Each session records its topics and files; when another session covers the same ground you get an alert, and /graph can pull its findings into the one you are in.",
+  "author": { "name": "Troy Lorents" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "model": {
+      "type": "string",
+      "title": "Topic model",
+      "description": "The model that names each session's topics after a turn. Default claude-haiku-5-5, the cheapest. A blank value uses the default.",
+      "default": "claude-haiku-5-5"
+    },
+    "sensitivity": {
+      "type": "string",
+      "title": "Match sensitivity",
+      "description": "How much two sessions must share before they are linked. strict: 3 shared topics, or a shared file plus 2 topics. normal: 2 shared topics, or a shared file plus 1 topic. loose: any 1 shared topic. A blank value uses normal.",
+      "options": ["strict", "normal", "loose"],
+      "default": "normal"
+    },
+    "windowDays": {
+      "type": "number",
+      "title": "Look back (days)",
+      "description": "Default 7. Sessions last active longer ago than this are not compared. A blank value uses the default.",
+      "default": 7
+    },
+    "folder": {
+      "type": "string",
+      "title": "Shared folder",
+      "description": "Every session writes its topics here as one small file, and reads the others'. A blank value uses ~/.claude/session-graph. Use the same folder on every session you want linked.",
+      "default": ""
+    }
+  }
+}
