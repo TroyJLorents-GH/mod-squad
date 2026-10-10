@@ -8,7 +8,7 @@ export type Panel = { id: string; title: string; color: string; width: number; l
 export type Layout = { twoColumns: boolean; rows: Panel[][] }
 
 export const COLORS = {
-  header: '#eab308',
+  header: '#ca8a04',
   daily: '#06b6d4',
   project: '#a855f7',
   model: '#f59e0b',
@@ -16,7 +16,7 @@ export const COLORS = {
   tools: '#3b82f6',
   shell: '#ec4899',
   mcp: '#14b8a6',
-  cost: '#facc15',
+  cost: '#ca8a04',
 } as const
 
 /** Columns from which two panels sit side by side. */

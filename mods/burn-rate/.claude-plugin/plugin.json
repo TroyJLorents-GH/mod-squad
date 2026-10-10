@@ -1,6 +1,6 @@
 {
   "name": "burn-rate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A terminal cost dashboard (/burn): spend by day, project, model, activity, tools, shell commands and MCP servers, read from your local Claude Code transcripts and estimated at list price.",
   "author": { "name": "Troy Lorents" },
   "types": "./types/index.d.ts",

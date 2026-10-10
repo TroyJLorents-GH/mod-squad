@@ -35,6 +35,14 @@ Install one, or all seven: `/plugin install model-router@mod-squad`, `/plugin in
 
 Every lit dot is a rung at or below what is running now; the shaded `◉` is the current model + effort. Below the ladder: why it was picked, what the last turn cost, and the running session total.
 
+It also shows as a band above the prompt box in the Claude Desktop app, in a local Code session:
+
+![model-router in the Claude Desktop Code tab: ladder band above the prompt and the pane on the right](docs/model-router-desktop.png)
+
+### burn-rate
+
+![burn-rate pane: spend by day, project, model, activity and tool over 7 days](docs/burn-rate-pane.png)
+
 ## Build your own mod
 
 A mod is a folder in `mods/<name>/`:
