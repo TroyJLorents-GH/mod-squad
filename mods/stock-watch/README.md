@@ -1,6 +1,6 @@
 # stock-watch
 
-Run `/stock`, enter a ticker with the low and high you care about, and get a chime and a toast when the price reaches either one.
+Set tickers in the plugin settings (Watch list), or run `/stock` and enter a ticker with the low and high you care about, and get a chime and a toast when the price reaches either one.
 
 ```
 /stock add AAPL low 180 high 200
@@ -40,6 +40,7 @@ Tickers use Yahoo Finance symbols: `AAPL`, `BRK-B`, `BTC-USD`, `^GSPC`, `EURUSD=
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
+| `watchlist` | blank | Tickers to watch, separated by semicolons: `AAPL 180 200; NVDA high 140`. Applied when a session starts and whenever the text changes. `/stock` changes made later are not undone. |
 | `pollSeconds` | 60 | How often prices are fetched, never under 30. |
 | `sound` | `chime` | `chime`, `chime and voice` (also says the ticker aloud, macOS), or `off`. |
 

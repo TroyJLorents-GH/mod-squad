@@ -21,7 +21,7 @@ Each mod lives in `mods/<name>/` with a `.claude-plugin/plugin.json`, `hooks/`, 
 | burn-rate | 0.1.1 | 19 | Yes | `/burn` cost dashboard from local transcripts. Light-mode colour fixed in 0.1.1. |
 | standup | 0.1.1 | 24 | No | `/standup` pane with Generate, Today and Yesterday. Writes a dated markdown file. Model and effort are pickers. |
 | session-graph | 0.1.2 | 28 | No | Cross-session topic graph in a shared folder. Alerts on overlap, and `/graph pull` brings another session's findings in. 0.1.2 starts polling on any surface. Alerts have not been seen working end to end. |
-| stock-watch | 0.1.0 | 30 | No | `/stock` watches tickers and plays a chime and shows a toast at a low or high. Price fetch uses an unofficial Yahoo endpoint. The fetch has not been run against live data. |
+| stock-watch | 0.2.0 | 33 | No | `/stock` watches tickers and plays a chime and shows a toast at a low or high. 0.2.0 adds a Watch list setting. Price fetch uses an unofficial Yahoo endpoint. The fetch has not been run against live data. |
 | context-gauge | 0.1.0 | 11 | Earlier | Context-window band above the prompt. |
 | ping | 0.1.0 | 13 | Earlier | Chime and toast when a long turn finishes. Kept for the video, but not a favourite. |
 | safety-net | 0.1.0 | 28 | Earlier | Blocks destructive commands and writes to secret files. |

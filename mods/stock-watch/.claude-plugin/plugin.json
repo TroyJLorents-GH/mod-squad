@@ -1,10 +1,18 @@
 {
   "name": "stock-watch",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "/stock: watch tickers and get a chime when one reaches the low or high you set. Works any time, in any session.",
-  "author": { "name": "Troy Lorents" },
+  "author": {
+    "name": "Troy Lorents"
+  },
   "types": "./types/index.d.ts",
   "userConfig": {
+    "watchlist": {
+      "type": "string",
+      "title": "Watch list",
+      "description": "Tickers to watch, separated by semicolons: AAPL 180 200; NVDA high 140; BTC-USD low 60000. Two prices are the low and the high. Applied when a session starts and whenever this text changes. /stock add and /stock rm still work for quick changes.",
+      "default": ""
+    },
     "pollSeconds": {
       "type": "number",
       "title": "Check every (seconds)",
@@ -15,7 +23,11 @@
       "type": "string",
       "title": "Alert sound",
       "description": "chime: a rising tone at your high, a falling tone at your low. chime and voice: also says the ticker aloud (macOS). off: the toast only.",
-      "options": ["chime", "chime and voice", "off"],
+      "options": [
+        "chime",
+        "chime and voice",
+        "off"
+      ],
       "default": "chime"
     }
   }

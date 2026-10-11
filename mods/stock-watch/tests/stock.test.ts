@@ -346,3 +346,34 @@ describe('stock-watch', () => {
     })
   }
 })
+
+describe('watch list setting', () => {
+  const start = ($: any) => $.session.start({ cwd: '/w', surface: 'terminal', isInteractive: true })
+
+  test('tickers in the setting are watched when a session starts', { options: { watchlist: 'AAPL 180 200; nvda high 140;BTC-USD low 60000' } }, async ($, on) => {
+    const w = world(on, { AAPL: 190, NVDA: 120, 'BTC-USD': 65000 })
+    await start($)
+    const list = (await $.command.run(cmd('list'))).text
+    expect(list).toContain('AAPL')
+    expect(list).toContain('NVDA')
+    expect(list).toContain('BTC-USD')
+    expect(list).toContain('low 180.00  high 200.00')
+    await w.clock.advance(3_000)
+    expect(w.fetched.length).toBe(3)
+  })
+
+  test('the same setting does not undo a later /stock change', { options: { watchlist: 'AAPL 180 200' } }, async ($, on) => {
+    world(on, { AAPL: 190 })
+    await start($)
+    await $.command.run(cmd('add AAPL high 250'))
+    await start($)
+    expect((await $.command.run(cmd('list'))).text).toContain('high 250.00')
+  })
+
+  test('a bad entry is named in a toast and the rest still apply', { options: { watchlist: 'AAPL 180 200; nonsense words here' } }, async ($, on) => {
+    const w = world(on, { AAPL: 190 })
+    await start($)
+    expect(w.toasts.some(t => t.includes('"nonsense words here"'))).toBe(true)
+    expect((await $.command.run(cmd('list'))).text).toContain('AAPL')
+  })
+})

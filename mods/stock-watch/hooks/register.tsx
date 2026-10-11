@@ -13,8 +13,8 @@ const watchesRef = atom({ plugin: 'stock-watch', key: 'watches' } as const, [] a
 const mutedRef = atom({ plugin: 'stock-watch', key: 'muted' } as const, false)
 const pollRef = atom({ plugin: 'stock-watch', key: 'poll' } as const, { isRunning: false, at: 0 })
 
-type Options = { pollSeconds?: number; sound?: string }
-type Cfg = { pollMs: number; sound: 'chime' | 'voice' | 'off'; isPolling: boolean; isBusy: boolean }
+type Options = { pollSeconds?: number; sound?: string; watchlist?: string }
+type Cfg = { pollMs: number; sound: 'chime' | 'voice' | 'off'; watchlist: string; isPolling: boolean; isBusy: boolean }
 
 function config(options: unknown): Cfg {
   const o = (options ?? {}) as Options
@@ -22,6 +22,7 @@ function config(options: unknown): Cfg {
   return {
     pollMs: Math.max(MIN_POLL_S, Number.isFinite(s) && s > 0 ? s : 60) * 1000,
     sound: o.sound === 'off' ? 'off' : o.sound === 'chime and voice' ? 'voice' : 'chime',
+    watchlist: (o.watchlist ?? '').trim(),
     isPolling: false,
     isBusy: false,
   }
@@ -140,6 +141,36 @@ function start($: EngineInterface, cfg: Cfg) {
   tick($, cfg)
 }
 
+/* ------------------------------------------------------------------ watch list */
+
+/**
+ * Adds or updates every ticker in the settings' watch list. Applied only when the text changed since it was last
+ * applied, so a later /stock change is not undone by the next session. Entries are never removed from here.
+ */
+async function applyWatchlist($: EngineInterface, cfg: Cfg) {
+  if (cfg.watchlist === '') return
+  if ((await $.store.get('watchlistApplied').catch(() => undefined)) === cfg.watchlist) return
+  const ws = await stored($)
+  const bad: string[] = []
+  for (const entry of cfg.watchlist.split(/[;\n]+/).map(x => x.trim()).filter(Boolean)) {
+    const cmd = parseCommand(`add ${entry}`)
+    if (cmd.kind !== 'add') {
+      bad.push(entry)
+      continue
+    }
+    const i = ws.findIndex(w => w.sym === cmd.sym)
+    const prior = i >= 0 ? ws[i] : undefined
+    const next: Watch = { ...(prior ?? { sym: cmd.sym }), low: cmd.low ?? prior?.low, high: cmd.high ?? prior?.high }
+    // A changed limit re-arms; an unchanged one keeps its state.
+    if (prior === undefined || prior.low !== next.low || prior.high !== next.high) next.fired = undefined
+    if (i >= 0) ws[i] = next
+    else if (ws.length < MAX_WATCHES) ws.push(next)
+  }
+  await save($, ws)
+  await $.store.set('watchlistApplied', cfg.watchlist).catch(() => undefined)
+  if (bad.length > 0) $.ui.toast(`stock-watch: could not read ${bad.map(b => `"${b}"`).join(', ')} in the watch list. Use: AAPL 180 200; NVDA high 140`, { timeoutMs: 15_000 })
+}
+
 /* -------------------------------------------------------------------- commands */
 
 async function run($: EngineInterface, cfg: Cfg, args: string): Promise<string> {
@@ -204,6 +235,7 @@ export const register: Register = (on, options) => {
       immediate: true,
     })
     await load($)
+    await applyWatchlist($, cfg)
     start($, cfg)
     return next(e)
   }).catch(($, e, next) => next(e))
