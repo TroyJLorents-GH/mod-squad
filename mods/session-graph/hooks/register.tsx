@@ -238,7 +238,8 @@ export const register: Register = (on, options) => {
     })
     const saved = await $.store.get('enabled').catch(() => undefined)
     if (saved === false) await update($, enabledRef, () => false)
-    if (e.isInteractive) {
+    // A session with a surface (terminal or desktop) is a person's session; -p and SDK runs have none.
+    if (e.isInteractive || e.surface !== null) {
       poll($, cfg)
       $.clock.after(3_000, () => void refresh($, cfg).catch(() => undefined))
     }
@@ -246,6 +247,8 @@ export const register: Register = (on, options) => {
   }).catch(($, e, next) => next(e))
 
   on('prompt.submit', async ($, e, next) => {
+    // A session that missed the start signal still begins polling at its first prompt.
+    poll($, cfg)
     const text = e.text.trim()
     if (text !== '' && !text.startsWith('/')) {
       if (cfg.me.firstPrompt === '') cfg.me.firstPrompt = clip(text.replace(/\s+/g, ' '), 200)

@@ -1,0 +1,22 @@
+{
+  "name": "stock-watch",
+  "version": "0.1.0",
+  "description": "/stock: watch tickers and get a chime when one reaches the low or high you set. Works any time, in any session.",
+  "author": { "name": "Troy Lorents" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "pollSeconds": {
+      "type": "number",
+      "title": "Check every (seconds)",
+      "description": "Default 60, minimum 30. How often prices are fetched while a session is open. A blank value uses the default.",
+      "default": 60
+    },
+    "sound": {
+      "type": "string",
+      "title": "Alert sound",
+      "description": "chime: a rising tone at your high, a falling tone at your low. chime and voice: also says the ticker aloud (macOS). off: the toast only.",
+      "options": ["chime", "chime and voice", "off"],
+      "default": "chime"
+    }
+  }
+}

@@ -27,9 +27,10 @@
 | [`turn-recap`](mods/turn-recap) | A one-line TL;DR under long answers, written by Haiku 5.5 for a fraction of a cent. |
 | [`standup`](mods/standup) | `/standup` → **Generate**: reads the day's sessions and writes a standup of what you got done, grouped by project, saved as markdown. |
 | [`session-graph`](mods/session-graph) | A knowledge graph across your sessions: alerts you when two of them are covering the same ground, and `/graph` pulls one's findings into the other. |
+| [`stock-watch`](mods/stock-watch) | `/stock add AAPL low 180 high 200`: watches a ticker and plays a rising or falling chime, plus a toast, when it reaches your high or low. |
 | [`ping`](mods/ping) | A chime + toast when a long turn finishes or is waiting for your approval, so you can walk away. |
 
-Install one, or all nine: `/plugin install model-router@mod-squad`, `/plugin install safety-net@mod-squad`, ...
+Install one, or all ten: `/plugin install model-router@mod-squad`, `/plugin install safety-net@mod-squad`, ...
 
 ### model-router
 

@@ -51,6 +51,11 @@
       "name": "session-graph",
       "source": "./mods/session-graph",
       "description": "A knowledge graph across your sessions: alerts you when two sessions cover the same ground, and pulls one's findings into the other."
+    },
+    {
+      "name": "stock-watch",
+      "source": "./mods/stock-watch",
+      "description": "/stock: watch tickers and get a chime and a toast when one reaches the low or high you set."
     }
   ]
 }

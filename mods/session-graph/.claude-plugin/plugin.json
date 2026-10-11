@@ -1,6 +1,6 @@
 {
   "name": "session-graph",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A knowledge graph across your Claude Code sessions. Each session records its topics and files; when another session covers the same ground you get an alert, and /graph can pull its findings into the one you are in.",
   "author": {
     "name": "Troy Lorents"
