@@ -100,7 +100,7 @@ const usage = { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, c
 function world(on: On, disk: Disk, reply: string | null = ME_REPLY) {
   const toasts: string[] = []
   const contexts: (readonly string[] | undefined)[] = []
-  const calls: { model: string; prompt: string }[] = []
+  const calls: { model: string; prompt: string; effort?: unknown }[] = []
   const clock = mock.clock(on, { now: NOW })
   mock.store(on)
   mock.env(on, { HOME: '/h' })
@@ -126,7 +126,7 @@ function world(on: On, disk: Disk, reply: string | null = ME_REPLY) {
     return { value: undefined } as never
   })
   on('model.complete', ($, e) => {
-    calls.push({ model: e.model, prompt: e.prompt })
+    calls.push({ model: e.model, prompt: e.prompt, effort: e.effort })
     return { value: reply === null ? { isAnswered: false as const, reason: 'empty-reply' as const, usage } : { isAnswered: true as const, text: reply, usage } } as never
   })
   on('ui.toast', ($, e) => {
@@ -169,6 +169,13 @@ describe('session-graph', () => {
     expect(r.files).toEqual(['/w/app/src/login.ts'])
     expect(r.notes).toEqual(['Callback clears stale cookie'])
     expect(w.calls[0]?.model).toBe('claude-haiku-5-5')
+    expect(w.calls[0]?.effort).toBe('low')
+  })
+
+  test('model and effort come from the options', { options: { model: 'claude-sonnet-5-5', effort: 'medium' } }, async ($, on) => {
+    const w = world(on, seed())
+    await turn($, w)
+    expect(w.calls[0]).toMatchObject({ model: 'claude-sonnet-5-5', effort: 'medium' })
   })
 
   test('an overlapping session raises one alert, then stays quiet', async ($, on) => {

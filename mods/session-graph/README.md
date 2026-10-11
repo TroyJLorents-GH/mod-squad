@@ -42,6 +42,7 @@ Each connection alerts once.
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `model` | `claude-haiku-5-5` | Names each session's topics. Haiku is the default because it is a short, frequent extraction and about 20x cheaper than Sonnet. |
+| `effort` | `low` | How hard the model thinks: low, medium, high, xhigh or max. Low is plenty for naming topics. |
 | `sensitivity` | `normal` | See the table above. |
 | `windowDays` | 7 | Sessions last active longer ago than this are not compared. |
 | `folder` | blank (`~/.claude/session-graph`) | The shared folder. Use the same one on every session you want linked. |

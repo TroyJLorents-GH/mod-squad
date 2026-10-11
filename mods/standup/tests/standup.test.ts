@@ -146,7 +146,7 @@ function world(
 ) {
   const now = '2026-10-08T12:00:00Z'
   const written: Record<string, string> = {}
-  const modelCalls: { model: string; prompt: string }[] = []
+  const modelCalls: { model: string; prompt: string; effort?: unknown }[] = []
   const toasts: string[] = []
   const clock = mock.clock(on, { now: Date.parse(now) })
   mock.store(on)
@@ -177,7 +177,7 @@ function world(
     return { value: undefined } as never
   })
   on('model.complete', ($, e) => {
-    modelCalls.push({ model: e.model, prompt: e.prompt })
+    modelCalls.push({ model: e.model, prompt: e.prompt, effort: e.effort })
     const key = Object.keys(replies).find(k => e.prompt.includes(k))
     const reply = key === undefined ? null : replies[key]
     const usage = { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
@@ -220,7 +220,7 @@ describe('standup', () => {
     expect(md).toContain('## api')
     expect(md).toContain('- Added pagination to /orders')
     expect(w.modelCalls.length).toBe(2) // the subagent transcript is not a third session
-    expect(w.modelCalls.every(c => c.model === 'claude-haiku-5-5')).toBe(true)
+    expect(w.modelCalls.every(c => c.model === 'claude-haiku-5-5' && c.effort === 'low')).toBe(true)
     expect(w.toasts.some(t => /2 sessions, 2 projects, saved to \/h\/standups\/2026-10-08\.md/.test(t))).toBe(true)
   })
 
@@ -259,11 +259,11 @@ describe('standup', () => {
     expect(w.written['/h/standups/2026-09-01.md']).toContain('no Claude Code activity')
   })
 
-  test('the model and folder come from the options; off saves nothing', { options: { model: 'claude-sonnet-5-5', folder: 'off' } }, async ($, on) => {
+  test('the model and folder come from the options; off saves nothing', { options: { model: 'claude-sonnet-5-5', effort: 'high', folder: 'off' } }, async ($, on) => {
     const w = world(on, files(), replies)
     await $.command.run(cmd('today'))
     await w.clock.advance(10)
-    expect(w.modelCalls.every(c => c.model === 'claude-sonnet-5-5')).toBe(true)
+    expect(w.modelCalls.every(c => c.model === 'claude-sonnet-5-5' && c.effort === 'high')).toBe(true)
     expect(Object.keys(w.written).length).toBe(0)
     expect(w.toasts.some(t => /2 sessions/.test(t) && !/saved/.test(t))).toBe(true)
   })

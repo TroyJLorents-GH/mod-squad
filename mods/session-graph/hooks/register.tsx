@@ -7,6 +7,10 @@ import type { Sensitivity } from './graph'
 
 const PANE = 'session-graph'
 const DEFAULT_MODEL = 'claude-haiku-5-5'
+const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const
+type Effort = (typeof EFFORTS)[number]
+// Higher effort spends output tokens thinking before the JSON, so the cap grows with it.
+const MAX_TOKENS: Record<Effort, number> = { low: 350, medium: 2000, high: 6000, xhigh: 12000, max: 24000 }
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit'])
 /** The model is asked at most this often per session; between asks the graph is only re-read. */
 const MIN_GAP_MS = 90_000
@@ -20,8 +24,8 @@ const linksRef = atom({ plugin: 'session-graph', key: 'links' } as const, [] as 
 const trackedRef = atom({ plugin: 'session-graph', key: 'tracked' } as const, 0)
 const pendingRef = atom({ plugin: 'session-graph', key: 'pending' } as const, null as Pending | null)
 
-type Options = { model?: string; sensitivity?: string; windowDays?: number; folder?: string }
-type Cfg = { model: string; threshold: number; windowMs: number; folder: string; me: ReturnType<typeof newState> }
+type Options = { model?: string; effort?: string; sensitivity?: string; windowDays?: number; folder?: string }
+type Cfg = { model: string; effort: Effort; maxTokens: number; threshold: number; windowMs: number; folder: string; me: ReturnType<typeof newState> }
 
 /** This session, as its engine's copy of the mod sees it. Nothing here outlives the session but the record on disk. */
 function newState() {
@@ -44,6 +48,8 @@ function config(options: unknown): Cfg {
   const sens = (['strict', 'normal', 'loose'] as const).includes(o.sensitivity as Sensitivity) ? (o.sensitivity as Sensitivity) : 'normal'
   return {
     model: o.model?.trim() || DEFAULT_MODEL,
+    effort: EFFORTS.includes(o.effort as Effort) ? (o.effort as Effort) : 'low',
+    maxTokens: MAX_TOKENS[EFFORTS.includes(o.effort as Effort) ? (o.effort as Effort) : 'low'],
     threshold: THRESHOLD[sens],
     windowMs: (Number.isFinite(days) && days > 0 ? days : 7) * 86_400_000,
     folder: (o.folder ?? '').trim(),
@@ -156,9 +162,9 @@ async function onTurn($: EngineInterface, cfg: Cfg, answer: string) {
           model: cfg.model,
           system: SYSTEM,
           prompt: extractPrompt(rec, cfg.me.lastPrompt, answer, [...cfg.me.files]),
-          effort: 'low',
-          maxTokens: 350,
-          timeoutMs: 20_000,
+          effort: cfg.effort,
+          maxTokens: cfg.maxTokens,
+          timeoutMs: cfg.effort === 'low' ? 20_000 : 120_000,
         })
         .catch(() => null)
       const x = r?.isAnswered ? parseExtract(r.text) : null

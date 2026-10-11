@@ -1,15 +1,36 @@
 {
   "name": "standup",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "/standup: click Generate and get a written standup of everything you got done today, grouped by project, from your local Claude Code sessions.",
-  "author": { "name": "Troy Lorents" },
+  "author": {
+    "name": "Troy Lorents"
+  },
   "types": "./types/index.d.ts",
   "userConfig": {
     "model": {
       "type": "string",
-      "title": "Summary model",
-      "description": "The model that writes each session's summary. Default claude-haiku-5-5, the cheapest (a few cents for a busy day). Use claude-sonnet-5-5 for sharper wording. A blank value uses the default.",
+      "title": "Model",
+      "description": "Writes each session's summary. Haiku 5.5 is the default and the cheapest. Sonnet 5.5 writes sharper bullets for about 20x the cost. Opus and Fable cost more still.",
+      "options": [
+        "claude-haiku-5-5",
+        "claude-sonnet-5-5",
+        "claude-opus-5-5",
+        "claude-fable-5-1"
+      ],
       "default": "claude-haiku-5-5"
+    },
+    "effort": {
+      "type": "string",
+      "title": "Effort",
+      "description": "How hard the model thinks. Default low, which is plenty for short summaries. Higher effort costs more output tokens.",
+      "options": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "default": "low"
     },
     "folder": {
       "type": "string",
@@ -19,7 +40,7 @@
     },
     "maxSessions": {
       "type": "number",
-      "title": "Most sessions per standup",
+      "title": "Max sessions",
       "description": "Default 40. The most recently active sessions are summarized first; older ones that day are skipped. A blank value uses the default.",
       "default": 40
     }

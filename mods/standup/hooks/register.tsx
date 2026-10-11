@@ -13,14 +13,18 @@ const FS_READ_MAX = 4_000_000
 const TAIL_BYTES = 3_500_000
 const BATCH = 4
 const DEFAULT_MODEL = 'claude-haiku-5-5'
+const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const
+type Effort = (typeof EFFORTS)[number]
+// Higher effort spends output tokens thinking before the JSON, so the cap grows with it.
+const MAX_TOKENS: Record<Effort, number> = { low: 400, medium: 2000, high: 6000, xhigh: 12000, max: 24000 }
 
 const IDLE: RunStatus = { isRunning: false, done: 0, total: 0 }
 const resultRef = atom({ plugin: 'standup', key: 'result' } as const, null as Result | null)
 const statusRef = atom({ plugin: 'standup', key: 'status' } as const, IDLE)
 const pickRef = atom({ plugin: 'standup', key: 'pick' } as const, 'today')
 
-type Options = { model?: string; folder?: string; maxSessions?: number }
-type Cfg = { model: string; folder: string; maxSessions: number }
+type Options = { model?: string; effort?: string; folder?: string; maxSessions?: number }
+type Cfg = { model: string; effort: Effort; maxTokens: number; folder: string; maxSessions: number }
 type Found = { path: string; size: number; mtime: number }
 
 let isBusy = false
@@ -30,6 +34,8 @@ function config(options: unknown): Cfg {
   const n = Number(o.maxSessions)
   return {
     model: o.model?.trim() || DEFAULT_MODEL,
+    effort: EFFORTS.includes(o.effort as Effort) ? (o.effort as Effort) : 'low',
+    maxTokens: MAX_TOKENS[EFFORTS.includes(o.effort as Effort) ? (o.effort as Effort) : 'low'],
     folder: (o.folder ?? '').trim(),
     maxSessions: Number.isFinite(n) && n > 0 ? Math.floor(n) : 40,
   }
@@ -88,7 +94,7 @@ async function summarize($: EngineInterface, d: SessionDigest, day: string, tz: 
   const cached = (await $.store.get(key).catch(() => undefined)) as Summary | undefined
   if (cached !== undefined) return { d, s: cached, isModel: true }
   const r = await $.model
-    .complete({ model: cfg.model, system: SYSTEM, prompt: digestText(d, tz), effort: 'low', maxTokens: 400, timeoutMs: 25_000 })
+    .complete({ model: cfg.model, system: SYSTEM, prompt: digestText(d, tz), effort: cfg.effort, maxTokens: cfg.maxTokens, timeoutMs: cfg.effort === 'low' ? 25_000 : 120_000 })
     .catch(() => null)
   const s = r?.isAnswered ? parseSummary(r.text) : null
   if (s === null) return { d, s: fallbackSummary(d), isModel: false }

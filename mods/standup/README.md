@@ -38,6 +38,7 @@ _2 sessions · 5 files changed · 3 commits_
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `model` | `claude-haiku-5-5` | Writes each session's summary. Haiku is the default because this is high-volume summarizing, about 20x cheaper than Sonnet. Use `claude-sonnet-5-5` for sharper wording. |
+| `effort` | `low` | How hard the model thinks: low, medium, high, xhigh or max. Low is plenty for short summaries. |
 | `folder` | blank (`~/standups`) | Where each standup is saved. Type `off` to save nothing. |
 | `maxSessions` | 40 | Most sessions summarized per standup, newest activity first. |
 
