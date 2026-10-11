@@ -4,20 +4,25 @@ import type { On } from 'claude-code'
 import { classifyHeuristic, colorAt, labelAt, rungOf } from '../hooks/ladder'
 
 // Stands in for the engine beneath the router: records what each step asked for.
+const asked: string[] = []
+
 function world(on: On, haikuReply?: string) {
   const sent: { model: string; effort: unknown }[] = []
+  asked.length = 0
   mock.clock(on, { now: 1_000_000 })
   mock.store(on)
   on('prompt.submit', ($, e) => ({ text: e.text }))
   // What the engine draws when the plugin passes: nothing.
   on('ui.render', () => ({ type: 'Box', props: {}, children: [] }) as never)
   const usage = { input_tokens: 50, output_tokens: 20, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
-  on('model.complete', () => ({
-    value:
+  on('model.complete', ($, e) => {
+    asked.push(e.model)
+    return { value:
       haikuReply === undefined
         ? { isAnswered: false as const, reason: 'empty-reply' as const, usage }
         : { isAnswered: true as const, text: haikuReply, usage },
-  }))
+    }
+  })
   on('turn.step', async function* ($, e) {
     sent.push({ model: e.model, effort: e.effort })
     return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn', usage: null }
@@ -138,5 +143,40 @@ describe('model-router', () => {
     expect(colorAt(0)).toBe('#22c55e')
     expect(colorAt(19)).toBe('#ef4444')
     expect(labelAt(rungOf('haiku', 'low'))).toBe('Haiku 5.5 · low')
+  })
+})
+
+describe('model-router settings', () => {
+  test('the classifier model follows the setting', { options: { classifierModel: 'sonnet' } }, async ($, on) => {
+    world(on)
+    await $.prompt.submit({ text: 'git status please', wait: false })
+    expect(asked).toEqual(['claude-sonnet-5-5'])
+  })
+
+  test('the classifier defaults to Haiku', async ($, on) => {
+    world(on)
+    await $.prompt.submit({ text: 'git status please', wait: false })
+    expect(asked).toEqual(['claude-haiku-5-5'])
+  })
+
+  test('a Sonnet floor starts a trivial turn on Sonnet low, not Haiku', { options: { floor: 'sonnet' } }, async ($, on) => {
+    const sent = world(on)
+    await $.prompt.submit({ text: 'git status please', wait: false })
+    await drain($.turn.step(step))
+    expect(sent[0]).toEqual({ model: 'claude-sonnet-5-5', effort: 'low' })
+  })
+
+  test('a floor never goes above the highest model allowed', { options: { floor: 'fable', ceiling: 'opus' } }, async ($, on) => {
+    const sent = world(on)
+    await $.prompt.submit({ text: 'git status please', wait: false })
+    await drain($.turn.step(step))
+    expect(sent[0]?.model).toBe('claude-opus-5-5')
+  })
+
+  test('a higher grade is not lowered by the floor', { options: { floor: 'sonnet' } }, async ($, on) => {
+    const sent = world(on, '{"model":"opus","effort":"high","reason":"hard"}')
+    await $.prompt.submit({ text: 'design a lock-free queue', wait: false })
+    await drain($.turn.step(step))
+    expect(sent[0]).toEqual({ model: 'claude-opus-5-5', effort: 'high' })
   })
 })

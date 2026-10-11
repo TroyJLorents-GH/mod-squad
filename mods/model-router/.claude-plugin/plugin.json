@@ -1,7 +1,7 @@
 {
   "name": "model-router",
-  "version": "0.3.1",
-  "description": "Routes each turn to the cheapest model + effort that fits the task (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and shows the ladder in a side pane.",
+  "version": "0.4.0",
+  "description": "Routes each turn to the cheapest model + effort that fits the task (Haiku 5.5 \u2192 Sonnet 5.5 \u2192 Opus 5.5 \u2192 Fable 5.1) and shows the ladder in a side pane.",
   "author": {
     "name": "Troy Lorents"
   },
@@ -14,6 +14,30 @@
       "options": [
         "haiku",
         "heuristic"
+      ],
+      "default": "haiku"
+    },
+    "classifierModel": {
+      "type": "string",
+      "title": "Classifier model",
+      "description": "The model that grades each prompt when Classifier is haiku. Haiku 5.5 is the cheapest and fastest; Sonnet 5.5 grades more carefully for about 20x the cost. A blank value uses Haiku.",
+      "options": [
+        "haiku",
+        "sonnet",
+        "opus",
+        "fable"
+      ],
+      "default": "haiku"
+    },
+    "floor": {
+      "type": "string",
+      "title": "Starting floor",
+      "description": "The cheapest model a new turn may start on, at low effort. Haiku (the default) means no floor: the router can start on Haiku. Sonnet means every turn starts on Sonnet or higher, while the router can still pick more or less effort within it. The highest model allowed still caps it.",
+      "options": [
+        "haiku",
+        "sonnet",
+        "opus",
+        "fable"
       ],
       "default": "haiku"
     },

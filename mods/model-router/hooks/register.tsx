@@ -32,7 +32,7 @@ const lastTurn = atom({ plugin: 'model-router', key: 'lastTurn' } as const, null
 const sessionUsd = atom({ plugin: 'model-router', key: 'sessionUsd' } as const, 0)
 const pin = atom({ plugin: 'model-router', key: 'pin' } as const, rungOf('opus', 'medium'))
 
-type Options = { classifier?: string; ceiling?: string; stickiness?: number; band?: string }
+type Options = { classifier?: string; classifierModel?: string; floor?: string; ceiling?: string; stickiness?: number; band?: string }
 
 async function setMode($: EngineInterface, next: Mode, pinned?: number) {
   await update($, mode, () => next)
@@ -54,6 +54,10 @@ export const register: Register = (on, options) => {
   const opts = (options ?? {}) as Options
   const ceiling = (opts.ceiling ?? 'fable') as ModelKey
   const stickiness = Math.max(0, Number(opts.stickiness ?? 3))
+  const classifierKey = (MODELS.find(m => m.key === opts.classifierModel)?.key ?? 'haiku') as ModelKey
+  const classifierId = MODELS.find(m => m.key === classifierKey)?.id ?? 'claude-haiku-5-5'
+  // A floor of haiku means none: every rung is allowed.
+  const floorRung = opts.floor && opts.floor !== 'haiku' && MODELS.some(m => m.key === opts.floor) ? rungOf(opts.floor as ModelKey, 'low') : 0
 
   // Per-turn escalation signals; a reload resetting them is harmless.
   let failures = 0
@@ -86,7 +90,7 @@ export const register: Register = (on, options) => {
       // A refused request (model not allowed, bad args) falls back to the heuristic.
       const r = await $.model
         .complete({
-          model: 'claude-haiku-5-5',
+          model: classifierId,
           system: CLASSIFIER_SYSTEM,
           prompt: classifierPrompt(e.text, current),
           effort: 'low',
@@ -98,7 +102,7 @@ export const register: Register = (on, options) => {
       if (graded) (pick = graded), (source = 'haiku')
     }
 
-    let rung = clamp(pick.rung, ceiling)
+    let rung = clamp(Math.max(pick.rung, floorRung), ceiling)
     let reason = pick.reason
 
     // A prompt folded into a running turn may only raise the rung.

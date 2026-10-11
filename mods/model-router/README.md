@@ -20,3 +20,9 @@ Routes each Claude Code turn to the cheapest model + effort that fits the task
 Prices ($/MTok in/out): Haiku 5.5 0.10/0.50 (0.50/2.50 over 100k-token prompts), Sonnet 5.5 2/10, Opus 5.5 4/20, Fable 5.1 10/50.
 
 Test: `claude plugin test mods/model-router`. Validate: `claude plugin validate mods/model-router`.
+
+## Classifier and starting floor
+
+- **Classifier model** (`classifierModel`, default `haiku`): The model that grades each prompt: haiku, sonnet, opus or fable. Haiku is cheapest. Sonnet grades more carefully for about 20x the cost. |
+- **Starting floor** (`floor`, default `haiku`): The cheapest model a new turn may start on. `haiku` means no floor. `sonnet` starts every turn on Sonnet or higher. The highest model allowed still caps it. |
+
