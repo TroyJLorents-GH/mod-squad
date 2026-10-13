@@ -4,6 +4,8 @@
 
 It shows your tickers on one small line under the prompt:
 
+![The stock-watch status line under the prompt](docs/status-line.png)
+
 ```text
 stock-watch  AAPL 342.46 ▲ · NVDA 227.35 ▼ · BTC-USD 83,094 ▲ +2
 ```
@@ -11,6 +13,8 @@ stock-watch  AAPL 342.46 ▲ · NVDA 227.35 ▼ · BTC-USD 83,094 ▲ +2
 - **▲ / ▼**: the price is above or below today's open. (Until the open is known, it compares with the previous close.)
 - **`+2`**: two more tickers are watched but not shown. The `/stock` pane shows all of them.
 - **`HIGH` / `LOW`**: appears after a ticker once it has hit one of your limits, for example `AAPL 351.20 ▲ HIGH`.
+
+> The pictures in this README are illustrations drawn to match what the mod prints. They are not screenshots of a live session, and the prices in them are examples.
 
 ## Quick start
 
@@ -37,6 +41,8 @@ Watching BTC-USD, alert at or above 90,000.
 ## What an alert looks like
 
 When a price reaches a limit you get a toast that stays for 30 seconds, and a chime. A **rising** chime means your **high** was reached, a **falling** chime means your **low** was reached.
+
+![Two alert toasts, one for a high and one for a low](docs/alert.png)
 
 ```text
 📈 AAPL reached your high: 350.40 USD (limit 350.00)
@@ -97,6 +103,8 @@ Stopped watching AAPL.
 ## The pane
 
 `/stock` opens a pane with a box to add tickers, and one pill per ticker. Each pill has a border that is **green** when the price is above today's open and **red** when it is below. The colours don't show in text, but this is the layout:
+
+![The /stock pane with a green AAPL pill, a red NVDA pill and a BTC-USD pill](docs/pane.png)
 
 ```text
  Add  [ AAPL   or   AAPL 180 200   or   NVDA high 140          ]
