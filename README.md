@@ -65,6 +65,24 @@ The pictures here are illustrations; the prices are examples. Under the prompt i
 
 A rising chime plays at your high, a falling chime at your low, and each limit alerts once. Full details, settings and examples: [mods/stock-watch](mods/stock-watch).
 
+### session-graph
+
+![session-graph pane: this session, two connected sessions and the topic graph](mods/session-graph/docs/pane.png)
+
+The pictures here are illustrations; the sessions and topics are examples. Each session writes a small note about what it is working on (a summary, topics, the files it edited) into a shared folder, `~/.claude/session-graph`, and reads the other sessions' notes from it. That folder is how your sessions find each other. When two of them cover the same ground, you get a toast:
+
+```
+session-graph: "Fixing the JWT token refresh race" in api-server also covers auth token refresh, mobile login flow. /graph to see it
+```
+
+```
+/graph                  open the pane: this session, its connections, the topic graph
+/graph pull 1           attach connection 1's findings to your next prompt, once
+/graph off | on         stop recording this session and make others skip it, or turn it back on
+```
+
+It links sessions on one machine only, and you can set how readily sessions link (`strict`, `normal`, `loose`). Full details, settings and what the shared folder holds: [mods/session-graph](mods/session-graph).
+
 ## Build your own mod
 
 A mod is a folder in `mods/<name>/`:
