@@ -27,7 +27,7 @@
 | [`turn-recap`](mods/turn-recap) | A one-line TL;DR under long answers, written by Haiku 5.5 for a fraction of a cent. |
 | [`standup`](mods/standup) | `/standup` → **Generate**: reads the day's sessions and writes a standup of what you got done, grouped by project, saved as markdown. |
 | [`session-graph`](mods/session-graph) | A knowledge graph across your sessions: alerts you when two of them are covering the same ground, and `/graph` pulls one's findings into the other. |
-| [`stock-watch`](mods/stock-watch) | `/stock add AAPL low 180 high 200`: watches a ticker and plays a rising or falling chime, plus a toast, when it reaches your high or low. |
+| [`stock-watch`](mods/stock-watch) | `/stock add AAPL low 180 high 200`: watches a ticker, or just its price, and plays a rising or falling chime, plus a toast, when it reaches your high or low. |
 | [`ping`](mods/ping) | A chime + toast when a long turn finishes or is waiting for your approval, so you can walk away. |
 
 Install one, or all ten: `/plugin install model-router@mod-squad`, `/plugin install safety-net@mod-squad`, ...
@@ -45,6 +45,25 @@ It also shows as a band above the prompt box in the Claude Desktop app, in a loc
 ### burn-rate
 
 ![burn-rate pane: spend by day, project, model, activity and tool over 7 days](docs/burn-rate-pane.png)
+
+### stock-watch
+
+![stock-watch pane: a green AAPL pill, a red NVDA pill with its chime off, and a BTC-USD pill with no limits](mods/stock-watch/docs/pane.png)
+
+The pictures here are illustrations; the prices are examples. Under the prompt it shows one line, `AAPL 342.46 ▲ · NVDA 227.35 ▼ · BTC-USD 83,094 ▲ +2`, with ▲ or ▼ measured from today's open.
+
+```
+/stock add AAPL                        just watch the price, no alerts
+/stock add AAPL low 335 high 350       alert at 335 or below, and at 350 or above
+/stock NVDA 120 140                    shorthand: low then high
+/stock add BTC-USD high 90000          one limit is fine
+/stock chime off | on                  the chime for every ticker (toasts still show)
+/stock AAPL chime off | on             the chime for one ticker
+/stock rm AAPL                         stop watching it
+/stock list | check | test             print the list, fetch now, play both chimes
+```
+
+A rising chime plays at your high, a falling chime at your low, and each limit alerts once. Full details, settings and examples: [mods/stock-watch](mods/stock-watch).
 
 ## Build your own mod
 
