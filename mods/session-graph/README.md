@@ -79,6 +79,13 @@ An example file (the real one is a single line, and the id is shortened here):
 
 ## Commands
 
+Type these exactly. The hint that appears after `/graph` is `[pull <n> | on | off]`, which means:
+
+- `/graph` on its own opens the pane.
+- `/graph pull` followed by a connection number from the list, for example `/graph pull 1`. `<n>` is the number in front of the connection, not a word.
+- `/graph on` turns recording back on.
+- `/graph off` stops recording and makes other sessions skip this one.
+
 | Command | Does |
 | --- | --- |
 | `/graph` | Opens the pane, and prints the connections. |

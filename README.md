@@ -78,6 +78,7 @@ session-graph: "Fixing the JWT token refresh race" in api-server also covers aut
 ```
 /graph                  open the pane: this session, its connections, the topic graph
 /graph pull 1           attach connection 1's findings to your next prompt, once
+                        (type the number of the connection, e.g. 1 or 2)
 /graph off | on         stop recording this session and make others skip it, or turn it back on
 ```
 
