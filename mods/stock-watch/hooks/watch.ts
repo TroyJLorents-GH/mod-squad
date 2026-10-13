@@ -6,11 +6,15 @@ export type Cmd =
   | { kind: 'open' }
   | { kind: 'add'; sym: string; low?: number; high?: number }
   | { kind: 'rm'; sym: string }
+  | { kind: 'chime'; on: boolean }
+  | { kind: 'quiet'; sym: string; quiet: boolean }
   | { kind: 'list' | 'check' | 'test' | 'mute' | 'unmute' }
   | { kind: 'error'; text: string }
 
+export const CHIME_USAGE = 'Usage: /stock chime on | off  (every ticker)  ·  /stock AAPL chime on | off  (one ticker)'
+
 export const USAGE =
-  'Usage: /stock add AAPL low 180 high 200  ·  /stock AAPL 180 200 (low, high)  ·  /stock rm AAPL  ·  /stock list | check | test | mute | unmute'
+  'Usage: /stock add AAPL low 180 high 200  ·  /stock AAPL 180 200 (low, high)  ·  /stock add AAPL (price only)  ·  /stock rm AAPL  ·  /stock list | check | test | mute | unmute'
 
 const VERBS = new Set(['add', 'rm', 'remove', 'delete', 'list', 'check', 'refresh', 'test', 'mute', 'unmute'])
 const LOW_WORDS = new Set(['low', 'below', 'under', '<', '<=', 'lo'])
@@ -26,6 +30,17 @@ export function parseCommand(args: string): Cmd {
   const tokens = args.trim().split(/\s+/).filter(Boolean)
   if (tokens.length === 0) return { kind: 'open' }
   const verb = (tokens[0] ?? '').toLowerCase()
+  if (verb === 'chime') {
+    const v = (tokens[1] ?? '').toLowerCase()
+    return v === 'on' || v === 'off' ? { kind: 'chime', on: v === 'on' } : { kind: 'error', text: CHIME_USAGE }
+  }
+  // /stock AAPL chime off: silences one ticker's chime; its toast still shows.
+  if (tokens.length === 3 && (tokens[1] ?? '').toLowerCase() === 'chime') {
+    const sym = verb.toUpperCase()
+    const v = (tokens[2] ?? '').toLowerCase()
+    if (!SYMBOL.test(sym) || (v !== 'on' && v !== 'off')) return { kind: 'error', text: CHIME_USAGE }
+    return { kind: 'quiet', sym, quiet: v === 'off' }
+  }
   if (verb === 'list' || verb === 'check' || verb === 'test' || verb === 'mute' || verb === 'unmute') return { kind: verb }
   if (verb === 'refresh') return { kind: 'check' }
 
@@ -55,14 +70,15 @@ export function parseCommand(args: string): Cmd {
   if (bare.length > 2) return { kind: 'error', text: USAGE }
   if (bare.length === 1) return { kind: 'error', text: `One bare price is ambiguous: say "low ${bare[0]}" or "high ${bare[0]}".` }
   if (bare.length === 2 && low === undefined && high === undefined) [low, high] = [Math.min(...bare), Math.max(...bare)]
-  if (low === undefined && high === undefined) return { kind: 'error', text: `Give ${sym} a low, a high or both. ${USAGE}` }
+  // Price-only needs the explicit `add`, so a mistyped command is not mistaken for a ticker.
+  if (low === undefined && high === undefined && verb !== 'add') return { kind: 'error', text: `To just watch ${sym}'s price, use /stock add ${sym}. ${USAGE}` }
   if (low !== undefined && high !== undefined && low >= high) return { kind: 'error', text: `The low (${low}) must be below the high (${high}).` }
   return { kind: 'add', sym, low, high }
 }
 
 /* -------------------------------------------------------------------- quotes */
 
-export type Quote = { price: number; prev?: number; name?: string; currency?: string }
+export type Quote = { price: number; prev?: number; open?: number; name?: string; currency?: string }
 
 /** Reads Yahoo Finance's chart response. Defensive: any other shape is an error message, never a throw. */
 export function parseQuote(text: string): Quote | { error: string } {
@@ -78,7 +94,10 @@ export function parseQuote(text: string): Quote | { error: string } {
   const price = m?.regularMarketPrice
   if (typeof price !== 'number' || !Number.isFinite(price)) return { error: 'no price in the response' }
   const prev = typeof m.chartPreviousClose === 'number' ? m.chartPreviousClose : typeof m.previousClose === 'number' ? m.previousClose : undefined
-  return { price, prev, name: m.longName ?? m.shortName, currency: m.currency }
+  // Today's open is the latest daily candle's open; the previous close is the fallback baseline.
+  const opens: unknown[] = j.chart.result[0].indicators?.quote?.[0]?.open ?? []
+  const open = [...opens].reverse().find((v): v is number => typeof v === 'number' && Number.isFinite(v))
+  return { price, prev, open, name: m.longName ?? m.shortName, currency: m.currency }
 }
 
 export const quoteUrl = (sym: string) => `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=1d`
@@ -113,12 +132,21 @@ export function rangeBar(w: Watch, width = 16): string {
   return `[${Array.from({ length: width }, (_, i) => (i === at ? (t === 0 || t === 1 ? '!' : '●') : '·')).join('')}]`
 }
 
-/** The pinned line under the prompt: the first few tickers, newest price first. */
-export function statusText(ws: Watch[]): string | undefined {
-  const shown = ws.filter(w => w.price !== undefined).slice(0, 3)
+/** Prices without cents once they are large (83,094 not 83,094.31): the status line is narrow. */
+export const fmtShort = (n: number | undefined): string => (n !== undefined && n >= 1000 ? n.toLocaleString('en-US', { maximumFractionDigits: 0 }) : fmtPrice(n))
+
+/**
+ * The pinned line under the prompt: the first few tickers with ▲ or ▼ from today's open (the previous close
+ * until the open is known), HIGH or LOW once a limit has been hit, and +N for the ones not shown.
+ */
+export function statusText(ws: Watch[], count = 3): string | undefined {
+  const shown = ws.filter(w => w.price !== undefined).slice(0, count)
   if (shown.length === 0) return undefined
-  const parts = shown.map(w => `${w.sym} ${fmtPrice(w.price)}${w.fired === 'high' ? ' ▲hit' : w.fired === 'low' ? ' ▼hit' : ''}`)
-  return `📈 ${parts.join(' · ')}${ws.length > shown.length ? ` +${ws.length - shown.length}` : ''}`
+  const parts = shown.map(w => {
+    const dir = fmtChange(w.price, w.open ?? w.prev).dir
+    return `${w.sym} ${fmtShort(w.price)}${dir > 0 ? ' ▲' : dir < 0 ? ' ▼' : ''}${w.fired === undefined ? '' : w.fired === 'high' ? ' HIGH' : ' LOW'}`
+  })
+  return `${parts.join(' · ')}${ws.length > shown.length ? ` +${ws.length - shown.length}` : ''}`
 }
 
 export function alertText(w: Watch, side: Side, price: number): string {

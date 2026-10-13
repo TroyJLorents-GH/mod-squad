@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Watch } from '../types'
-import { USAGE, alertText, evaluate, fmtChange, fmtPrice, parseCommand, parseQuote, quoteUrl, rangeBar, statusText } from './watch'
+import { CHIME_USAGE, USAGE, alertText, evaluate, fmtChange, fmtPrice, parseCommand, parseQuote, quoteUrl, rangeBar, statusText } from './watch'
 import type { Side } from './watch'
 
 const PANE = 'stock-watch'
@@ -13,8 +13,8 @@ const watchesRef = atom({ plugin: 'stock-watch', key: 'watches' } as const, [] a
 const mutedRef = atom({ plugin: 'stock-watch', key: 'muted' } as const, false)
 const pollRef = atom({ plugin: 'stock-watch', key: 'poll' } as const, { isRunning: false, at: 0 })
 
-type Options = { pollSeconds?: number; sound?: string; watchlist?: string }
-type Cfg = { pollMs: number; sound: 'chime' | 'voice' | 'off'; watchlist: string; isPolling: boolean; isBusy: boolean }
+type Options = { pollSeconds?: number; sound?: string; watchlist?: string; statusLine?: string; statusCount?: number }
+type Cfg = { pollMs: number; sound: 'chime' | 'voice' | 'off'; watchlist: string; statusLine: boolean; statusCount: number; isPolling: boolean; isBusy: boolean }
 
 function config(options: unknown): Cfg {
   const o = (options ?? {}) as Options
@@ -23,6 +23,8 @@ function config(options: unknown): Cfg {
     pollMs: Math.max(MIN_POLL_S, Number.isFinite(s) && s > 0 ? s : 60) * 1000,
     sound: o.sound === 'off' ? 'off' : o.sound === 'chime and voice' ? 'voice' : 'chime',
     watchlist: (o.watchlist ?? '').trim(),
+    statusLine: o.statusLine !== 'hide',
+    statusCount: Math.min(5, Math.max(1, Math.round(Number(o.statusCount)) || 3)),
     isPolling: false,
     isBusy: false,
   }
@@ -36,11 +38,13 @@ async function stored($: EngineInterface): Promise<Watch[]> {
   return Array.isArray(v) ? (v as Watch[]) : []
 }
 
+// The status line settings, read by save() and load(), which are called from places that do not carry the config.
+let statusView = { show: true, count: 3 }
+
 async function save($: EngineInterface, ws: Watch[]) {
   await $.store.set('watches', ws).catch(() => undefined)
   await update($, watchesRef, () => ws)
-  const line = statusText(ws)
-  $.ui.status(line)
+  if (statusView.show) $.ui.status(statusText(ws, statusView.count))
 }
 
 /** Loads the store into the pane's state (a session that just started, or another session's change). */
@@ -49,7 +53,7 @@ async function load($: EngineInterface) {
   await update($, watchesRef, () => ws)
   await update($, mutedRef, () => false)
   if ((await $.store.get('muted').catch(() => undefined)) === true) await update($, mutedRef, () => true)
-  const line = statusText(ws)
+  const line = statusView.show ? statusText(ws, statusView.count) : undefined
   if (line !== undefined) $.ui.status(line)
 }
 
@@ -77,7 +81,7 @@ async function chime($: EngineInterface, side: Side) {
 
 async function announce($: EngineInterface, cfg: Cfg, w: Watch, side: Side, price: number) {
   $.ui.toast(alertText(w, side, price), { timeoutMs: 30_000 })
-  if (cfg.sound === 'off' || (await read($, mutedRef))) return
+  if (cfg.sound === 'off' || w.quiet === true || (await read($, mutedRef))) return
   await chime($, side)
   if (cfg.sound === 'voice') await $.audio.speak(`${w.sym.replace(/[^A-Z0-9]/g, ' ')} ${side === 'high' ? 'reached your high' : 'fell to your low'}`).catch(() => undefined)
 }
@@ -114,7 +118,7 @@ async function check($: EngineInterface, cfg: Cfg) {
         continue
       }
       const { side, alert } = evaluate(w, q.price)
-      ws[i] = { ...w, price: q.price, prev: q.prev, name: q.name ?? w.name, currency: q.currency ?? w.currency, at: await $.clock.now(), error: undefined, fired: side ?? undefined }
+      ws[i] = { ...w, price: q.price, prev: q.prev, open: q.open ?? w.open, name: q.name ?? w.name, currency: q.currency ?? w.currency, at: await $.clock.now(), error: undefined, fired: side ?? undefined }
       // Written before the sound plays, so a second session polling right now sees it already fired.
       await save($, ws)
       if (alert !== null) await announce($, cfg, ws[i] as Watch, alert, q.price)
@@ -197,6 +201,7 @@ async function run($: EngineInterface, cfg: Cfg, args: string): Promise<string> 
       else ws.push(next)
       await save($, ws)
       $.clock.after(1, () => void check($, cfg).catch(() => undefined))
+      if (next.low === undefined && next.high === undefined) return `Watching ${next.sym}: price only, no alerts. Add a limit any time with /stock add ${next.sym} low 180 high 200.`
       return `Watching ${next.sym}${next.low !== undefined ? `, alert at or below ${fmtPrice(next.low)}` : ''}${next.high !== undefined ? `, alert at or above ${fmtPrice(next.high)}` : ''}.`
     }
     case 'rm': {
@@ -213,11 +218,18 @@ async function run($: EngineInterface, cfg: Cfg, args: string): Promise<string> 
       await chime($, 'low')
       return 'Stock watch: played the high chime, then the low chime. Silent? That surface has no player; the toast still shows.'
     case 'mute':
-    case 'unmute': {
-      const m = cmd.kind === 'mute'
+    case 'unmute':
+    case 'chime': {
+      const m = cmd.kind === 'mute' || (cmd.kind === 'chime' && !cmd.on)
       await update($, mutedRef, () => m)
       await $.store.set('muted', m).catch(() => undefined)
-      return m ? 'Stock watch: sound muted. Toasts still show.' : 'Stock watch: sound on.'
+      return m ? 'Stock watch: chime off for every ticker. Toasts still show.' : 'Stock watch: chime on.'
+    }
+    case 'quiet': {
+      const ws = await stored($)
+      if (!ws.some(w => w.sym === cmd.sym)) return `Stock watch: ${cmd.sym} is not on the list.`
+      await save($, ws.map(w => (w.sym === cmd.sym ? { ...w, quiet: cmd.quiet } : w)))
+      return cmd.quiet ? `Stock watch: ${cmd.sym} chime off. Its toast still shows.` : `Stock watch: ${cmd.sym} chime on.`
     }
   }
 }
@@ -226,6 +238,7 @@ const OPEN = { id: PANE, title: 'Stock watch', focus: true, closeOnEscape: true,
 
 export const register: Register = (on, options) => {
   const cfg = config(options)
+  statusView = { show: cfg.statusLine, count: cfg.statusCount }
 
   on('session.start', async ($, e, next) => {
     await $.command.register({
@@ -261,7 +274,7 @@ export const register: Register = (on, options) => {
 
     return (
       <Box flexDirection="column" width={cols}>
-        <Input key="add" label="Add" placeholder="AAPL 180 200   or   NVDA high 140" onSubmit={value => void run($, cfg, `add ${value}`).then(t => $.ui.toast(t))} />
+        <Input key="add" label="Add" placeholder="AAPL   or   AAPL 180 200   or   NVDA high 140" onSubmit={value => void run($, cfg, `add ${value}`).then(t => $.ui.toast(t))} />
         <Box columnGap={1} marginTop={1}>
           <Button key="check" label="Check now" hotkey="c" variant="secondary" onPress={() => void run($, cfg, 'check')} />
           <Button key="test" label="Test sound" hotkey="t" variant="secondary" onPress={() => void run($, cfg, 'test')} />
@@ -270,25 +283,30 @@ export const register: Register = (on, options) => {
         <Box flexDirection="column" marginTop={1} borderStyle="round" borderColor="#22c55e" paddingX={1} width={cols}>
           {ws.length === 0 && (
             <Text dimColor wrap="wrap">
-              Nothing watched yet. Type a ticker with a low and a high above, for example AAPL 180 200.
+              Nothing watched yet. Type a ticker above, for example AAPL to watch the price, or AAPL 180 200 to alert at a low and a high.
             </Text>
           )}
           {ws.map(w => {
-            const ch = fmtChange(w.price, w.prev)
+            // Up or down from today's open (the previous close when the open is not known yet).
+            const ch = fmtChange(w.price, w.open ?? w.prev)
+            const tone = ch.dir > 0 ? '#22c55e' : ch.dir < 0 ? '#ef4444' : undefined
             return (
-              <Box flexDirection="column" marginBottom={1}>
+              <Box key={w.sym} flexDirection="column" marginBottom={1} borderStyle="round" borderColor={tone} paddingX={1} width={cols - 2}>
                 <Box columnGap={1}>
                   <Text bold>{w.sym.padEnd(8)}</Text>
                   <Text bold>{fmtPrice(w.price)}</Text>
-                  <Text color={ch.dir > 0 ? '#22c55e' : ch.dir < 0 ? '#ef4444' : undefined} dimColor={ch.dir === 0}>
+                  <Text color={tone} dimColor={ch.dir === 0}>
                     {ch.text}
                   </Text>
+                  {w.quiet === true && <Text dimColor>chime off</Text>}
                   {w.fired !== undefined && <Text color={w.fired === 'high' ? '#22c55e' : '#ef4444'} bold>{w.fired === 'high' ? 'HIGH HIT' : 'LOW HIT'}</Text>}
                   <Button key={`rm-${w.sym}`} label="Remove" variant="secondary" onPress={() => void run($, cfg, `rm ${w.sym}`)} />
                 </Box>
-                <Text dimColor wrap="truncate">
-                  {`low ${fmtPrice(w.low)}  ${rangeBar(w)}  high ${fmtPrice(w.high)}`}
-                </Text>
+                {(w.low !== undefined || w.high !== undefined) && (
+                  <Text dimColor wrap="truncate">
+                    {`low ${fmtPrice(w.low)}  ${rangeBar(w)}  high ${fmtPrice(w.high)}`}
+                  </Text>
+                )}
                 {w.error !== undefined && (
                   <Text color="#f59e0b" wrap="truncate">
                     {w.error}

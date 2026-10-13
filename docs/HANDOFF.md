@@ -56,6 +56,7 @@ Test counts are from `claude plugin test .` in each mod folder. Run `claude plug
 5. **Jev.** TypeSafe AI's Jev returns typed decisions rather than chat. Early access is waitlisted. It could replace the model-router classifier, but the API has not been verified and nothing is built.
 6. **Windows sound in the desktop app** is unverified. Test with `/stock test`.
 7. **Video.** The user is making a YouTube video on the mods. Demo order is up to them. Ping is the weakest demo.
+8. **On/off for every mod.** Each mod gets its own `on` and `off` command named after the mod, for example `/stock off` and `/stock on`. Off stops the whole mod (no polling, alerts or pane), which is different from `/stock chime off`, which only silences the sound. The state survives a restart. Hook-only mods (safety-net, secret-scrubber, turn-recap, ping) need a command added. Turning off safety-net or secret-scrubber must say plainly that protection is off. Do this after the current work is done.
 
 ## Working agreements
 

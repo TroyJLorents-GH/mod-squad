@@ -6,7 +6,11 @@ export type Watch = {
   /** Which limit already alerted. Cleared when the price is back inside the band, which re-arms it. */
   fired?: 'low' | 'high'
   price?: number
+  /** Today's open, the baseline for the up/down colour. Falls back to the previous close when absent. */
+  open?: number
   prev?: number
+  /** This ticker's chime is off. Its toast still shows. */
+  quiet?: boolean
   name?: string
   currency?: string
   /** When the price was last fetched (ms since epoch). */

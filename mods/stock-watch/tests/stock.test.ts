@@ -25,7 +25,8 @@ describe('command parsing', () => {
 
   test('mistakes say what to do', () => {
     expect(parseCommand('AAPL 180')).toMatchObject({ kind: 'error', text: expect.stringContaining('ambiguous') })
-    expect(parseCommand('AAPL')).toMatchObject({ kind: 'error' })
+    expect(parseCommand('AAPL')).toMatchObject({ kind: 'error', text: expect.stringContaining('/stock add AAPL') })
+    expect(parseCommand('add nvda')).toEqual({ kind: 'add', sym: 'NVDA', low: undefined, high: undefined })
     expect(parseCommand('AAPL low')).toMatchObject({ kind: 'error', text: expect.stringContaining('needs a price') })
     expect(parseCommand('AAPL low 200 high 100')).toMatchObject({ kind: 'error', text: expect.stringContaining('must be below') })
     expect(parseCommand('AAPL banana 5')).toMatchObject({ kind: 'error' })
@@ -94,7 +95,8 @@ describe('formatting', () => {
     expect(rangeBar({ sym: 'A', low: 0, high: 10, price: 10 }, 11)).toBe('[··········!]')
     expect(rangeBar({ sym: 'A', low: 0, price: 5 })).toBe('')
     expect(statusText([])).toBe(undefined)
-    expect(statusText([{ sym: 'A', price: 10 }, { sym: 'B', price: 20, fired: 'high' }])).toBe('📈 A 10.00 · B 20.00 ▲hit')
+    expect(statusText([{ sym: 'A', price: 10, open: 9 }, { sym: 'B', price: 20, open: 22, fired: 'low' }, { sym: 'C', price: 83094.31, prev: 80000 }, { sym: 'D', price: 5 }])).toBe('A 10.00 ▲ · B 20.00 ▼ LOW · C 83,094 ▲ +1')
+    expect(statusText([{ sym: 'A', price: 10 }, { sym: 'B', price: 20 }], 1)).toBe('A 10.00 +1')
     expect(alertText({ sym: 'A', low: 100, high: 200, currency: 'USD' }, 'high', 201.5)).toBe('📈 A reached your high: 201.50 USD (limit 200.00)')
   })
 })
@@ -158,7 +160,7 @@ describe('stock-watch', () => {
     expect(r.text).toBe('Watching AAPL, alert at or below 140.00, alert at or above 160.00.')
     await w.clock.advance(10)
     expect(w.fetched.length).toBe(1)
-    expect(w.statuses.at(-1)).toBe('📈 AAPL 150.00')
+    expect(w.statuses.at(-1)).toBe('AAPL 150.00 ▲')
     expect(w.toasts.length).toBe(0)
   })
 
@@ -174,7 +176,7 @@ describe('stock-watch', () => {
     prices.AAPL = 165
     await w.clock.advance(60_000)
     expect(w.toasts.length).toBe(1)
-    expect(w.statuses.at(-1)).toBe('📈 AAPL 165.00 ▲hit')
+    expect(w.statuses.at(-1)).toBe('AAPL 165.00 ▲ HIGH')
   })
 
   test('the low plays the falling chime; coming back inside re-arms; crossing again alerts again', async ($, on) => {
@@ -375,5 +377,83 @@ describe('watch list setting', () => {
     await start($)
     expect(w.toasts.some(t => t.includes('"nonsense words here"'))).toBe(true)
     expect((await $.command.run(cmd('list'))).text).toContain('AAPL')
+  })
+})
+
+describe('chime and open', () => {
+  test('chime on and off for everything, and per ticker', () => {
+    expect(parseCommand('chime off')).toEqual({ kind: 'chime', on: false })
+    expect(parseCommand('chime on')).toEqual({ kind: 'chime', on: true })
+    expect(parseCommand('AAPL chime off')).toEqual({ kind: 'quiet', sym: 'AAPL', quiet: true })
+    expect(parseCommand('brk-b chime on')).toEqual({ kind: 'quiet', sym: 'BRK-B', quiet: false })
+    expect(parseCommand('chime maybe')).toEqual({ kind: 'error', text: expect.stringContaining('chime on') })
+  })
+
+  test("the baseline is today's open from the latest candle", () => {
+    const text = JSON.stringify({ chart: { result: [{ meta: { regularMarketPrice: 344.7, chartPreviousClose: 340.97, currency: 'USD' }, indicators: { quote: [{ open: [338, 344.67] }] } }], error: null } })
+    expect(parseQuote(text)).toMatchObject({ price: 344.7, prev: 340.97, open: 344.67 })
+  })
+})
+
+describe('chime and open in the pane', () => {
+  test('/stock chime off mutes every ticker; a quiet ticker keeps its toast and loses its chime', async ($, on) => {
+    const prices: Prices = { AAPL: 150, NVDA: 120 }
+    const w = world(on, prices)
+    await $.command.run(cmd('add AAPL high 160'))
+    await $.command.run(cmd('add NVDA high 130'))
+    await $.command.run(cmd('AAPL chime off'))
+    await w.clock.advance(10)
+    prices.AAPL = 161
+    prices.NVDA = 131
+    await w.clock.advance(60_000)
+    expect(w.toasts.length).toBe(2)
+    expect(w.played).toEqual(['sounds/high.wav'])
+    await $.command.run(cmd('chime off'))
+    expect((await $.command.run(cmd('list'))).text).toContain('AAPL')
+  })
+})
+
+describe('price only', () => {
+  test('a ticker with no limits shows its price and never alerts', async ($, on) => {
+    const prices: Prices = { AAPL: 150 }
+    const w = world(on, prices)
+    const r = await $.command.run(cmd('add AAPL'))
+    expect(r.text).toContain('price only')
+    await w.clock.advance(10)
+    expect(w.statuses.at(-1)).toBe('AAPL 150.00 ▲')
+    prices.AAPL = 500
+    await w.clock.advance(60_000)
+    expect(w.toasts.length).toBe(0)
+    expect(w.played).toEqual([])
+  })
+
+  test('adding a limit to a price-only ticker keeps it on the list', async ($, on) => {
+    const w = world(on, { AAPL: 150 })
+    await $.command.run(cmd('add AAPL'))
+    const r = await $.command.run(cmd('add AAPL high 160'))
+    expect(r.text).toBe('Watching AAPL, alert at or above 160.00.')
+    expect((await $.command.run(cmd('list'))).text).toContain('high 160.00')
+    expect(w.toasts.length).toBe(0)
+  })
+})
+
+describe('status line settings', () => {
+  test('hide leaves the line empty but keeps the watch and alerts', { options: { statusLine: 'hide' } }, async ($, on) => {
+    const prices: Prices = { AAPL: 150 }
+    const w = world(on, prices)
+    await $.command.run(cmd('add AAPL high 160'))
+    await w.clock.advance(10)
+    expect(w.statuses.filter(x => x !== undefined)).toEqual([])
+    prices.AAPL = 161
+    await w.clock.advance(60_000)
+    expect(w.toasts.length).toBe(1)
+  })
+
+  test('the count setting limits how many tickers show, between 1 and 5', { options: { statusCount: 1 } }, async ($, on) => {
+    const w = world(on, { AAPL: 150, NVDA: 120 })
+    await $.command.run(cmd('add AAPL'))
+    await $.command.run(cmd('add NVDA'))
+    await w.clock.advance(10)
+    expect(w.statuses.at(-1)).toBe('AAPL 150.00 ▲ +1')
   })
 })
