@@ -1,4 +1,4 @@
 node_modules/
 *.agent-handoff/
 */HANDOFF.md
-HANDOFF.md
+docs/HANDOFF.md
