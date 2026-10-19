@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Watch } from '../types'
-import { CHIME_USAGE, USAGE, alertText, evaluate, fmtChange, fmtPrice, parseCommand, parseQuote, quoteUrl, rangeBar, statusText } from './watch'
+import { CHIME_USAGE, POWER_USAGE, USAGE, alertText, evaluate, fmtChange, fmtPrice, parseCommand, parseQuote, quoteUrl, rangeBar, statusText } from './watch'
 import type { Side } from './watch'
 
 const PANE = 'stock-watch'
@@ -12,6 +12,8 @@ const MIN_POLL_S = 30
 const watchesRef = atom({ plugin: 'stock-watch', key: 'watches' } as const, [] as Watch[])
 const mutedRef = atom({ plugin: 'stock-watch', key: 'muted' } as const, false)
 const pollRef = atom({ plugin: 'stock-watch', key: 'poll' } as const, { isRunning: false, at: 0 })
+// Off stops price checks, alerts and the status line. The watch list is kept, and /stock on turns it back on.
+const enabledRef = atom({ plugin: 'stock-watch', key: 'enabled' } as const, true)
 
 type Options = { pollSeconds?: number; sound?: string; watchlist?: string; statusLine?: string; statusCount?: number }
 type Cfg = { pollMs: number; sound: 'chime' | 'voice' | 'off'; watchlist: string; statusLine: boolean; statusCount: number; isPolling: boolean; isBusy: boolean }
@@ -41,10 +43,16 @@ async function stored($: EngineInterface): Promise<Watch[]> {
 // The status line settings, read by save() and load(), which are called from places that do not carry the config.
 let statusView = { show: true, count: 3 }
 
+/** Shows the price line under the prompt, or clears it when the mod is off or the line is hidden. */
+async function showLine($: EngineInterface, ws: Watch[]) {
+  const on = statusView.show && (await read($, enabledRef))
+  $.ui.status(on ? statusText(ws, statusView.count) : undefined)
+}
+
 async function save($: EngineInterface, ws: Watch[]) {
   await $.store.set('watches', ws).catch(() => undefined)
   await update($, watchesRef, () => ws)
-  if (statusView.show) $.ui.status(statusText(ws, statusView.count))
+  await showLine($, ws)
 }
 
 /** Loads the store into the pane's state (a session that just started, or another session's change). */
@@ -53,8 +61,7 @@ async function load($: EngineInterface) {
   await update($, watchesRef, () => ws)
   await update($, mutedRef, () => false)
   if ((await $.store.get('muted').catch(() => undefined)) === true) await update($, mutedRef, () => true)
-  const line = statusView.show ? statusText(ws, statusView.count) : undefined
-  if (line !== undefined) $.ui.status(line)
+  await showLine($, ws)
 }
 
 /* ----------------------------------------------------------------------- sound */
@@ -101,7 +108,7 @@ async function fetchQuote($: EngineInterface, sym: string) {
 
 /** Fetches every watched ticker once, records the price, and alerts on a fresh crossing. */
 async function check($: EngineInterface, cfg: Cfg) {
-  if (cfg.isBusy) return
+  if (cfg.isBusy || !(await read($, enabledRef))) return
   cfg.isBusy = true
   try {
     await update($, pollRef, p => ({ ...p, isRunning: true }))
@@ -201,8 +208,9 @@ async function run($: EngineInterface, cfg: Cfg, args: string): Promise<string> 
       else ws.push(next)
       await save($, ws)
       $.clock.after(1, () => void check($, cfg).catch(() => undefined))
-      if (next.low === undefined && next.high === undefined) return `Watching ${next.sym}: price only, no alerts. Add a limit any time with /stock add ${next.sym} low 180 high 200.`
-      return `Watching ${next.sym}${next.low !== undefined ? `, alert at or below ${fmtPrice(next.low)}` : ''}${next.high !== undefined ? `, alert at or above ${fmtPrice(next.high)}` : ''}.`
+      const off = (await read($, enabledRef)) ? '' : ' Stock watch is off, so this price is not checked until /stock on.'
+      if (next.low === undefined && next.high === undefined) return `Watching ${next.sym}: price only, no alerts. Add a limit any time with /stock add ${next.sym} low 180 high 200.${off}`
+      return `Watching ${next.sym}${next.low !== undefined ? `, alert at or below ${fmtPrice(next.low)}` : ''}${next.high !== undefined ? `, alert at or above ${fmtPrice(next.high)}` : ''}.${off}`
     }
     case 'rm': {
       const ws = await stored($)
@@ -211,8 +219,17 @@ async function run($: EngineInterface, cfg: Cfg, args: string): Promise<string> 
       return `Stopped watching ${cmd.sym}.`
     }
     case 'check':
+      if (!(await read($, enabledRef))) return 'Stock watch is off. Run /stock on first.'
       $.clock.after(1, () => void check($, cfg).catch(() => undefined))
       return 'Stock watch: checking prices now.'
+    case 'power': {
+      await update($, enabledRef, () => cmd.on)
+      await $.store.set('enabled', cmd.on).catch(() => undefined)
+      await showLine($, await stored($))
+      if (!cmd.on) return 'Stock watch: off. Prices are not checked, no alerts fire, and the price line is hidden. Your watch list is kept. /stock on turns it back on.'
+      $.clock.after(1, () => void check($, cfg).catch(() => undefined))
+      return 'Stock watch: on. Checking prices now.'
+    }
     case 'test':
       await chime($, 'high')
       await chime($, 'low')
@@ -244,9 +261,11 @@ export const register: Register = (on, options) => {
     await $.command.register({
       name: 'stock',
       description: 'Stock watch: alert me when a ticker hits a low or high',
-      argumentHint: 'add AAPL low 180 high 200 | rm AAPL | list | check | test | mute',
+      argumentHint: 'add AAPL low 180 high 200 | rm AAPL | list | check | test | chime on|off | on | off',
       immediate: true,
     })
+    const saved = await $.store.get('enabled').catch(() => undefined)
+    if (saved === false) await update($, enabledRef, () => false)
     await load($)
     await applyWatchlist($, cfg)
     start($, cfg)
@@ -270,6 +289,7 @@ export const register: Register = (on, options) => {
     const { Box, Text, Button, Input } = $.ui.resolve(e)
     const ws = await read($, watchesRef)
     const muted = await read($, mutedRef)
+    const enabled = await read($, enabledRef)
     const cols = Math.max(20, e.props.bodyColumns)
 
     return (
@@ -280,6 +300,11 @@ export const register: Register = (on, options) => {
           <Button key="test" label="Test sound" hotkey="t" variant="secondary" onPress={() => void run($, cfg, 'test')} />
           <Button key="mute" label={muted ? 'Unmute' : 'Mute'} hotkey="m" variant={muted ? 'primary' : 'secondary'} onPress={() => void run($, cfg, muted ? 'unmute' : 'mute')} />
         </Box>
+        {!enabled && (
+          <Text color="#f59e0b" wrap="wrap">
+            Stock watch is off. Prices are not checked and no alerts fire. Type /stock on to start again.
+          </Text>
+        )}
         <Box flexDirection="column" marginTop={1} borderStyle="round" borderColor="#22c55e" paddingX={1} width={cols}>
           {ws.length === 0 && (
             <Text dimColor wrap="wrap">

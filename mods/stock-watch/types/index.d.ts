@@ -24,6 +24,8 @@ declare module 'claude-code' {
     'stock-watch': {
       watches: Watch[]
       muted: boolean
+      /** Off: prices are not checked and no alerts or status line. Remembered. */
+      enabled: boolean
       /** The last poll: when it ended, and whether one is running now. */
       poll: { isRunning: boolean; at: number }
     }

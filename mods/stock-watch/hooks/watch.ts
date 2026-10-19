@@ -7,9 +7,12 @@ export type Cmd =
   | { kind: 'add'; sym: string; low?: number; high?: number }
   | { kind: 'rm'; sym: string }
   | { kind: 'chime'; on: boolean }
+  | { kind: 'power'; on: boolean }
   | { kind: 'quiet'; sym: string; quiet: boolean }
   | { kind: 'list' | 'check' | 'test' | 'mute' | 'unmute' }
   | { kind: 'error'; text: string }
+
+export const POWER_USAGE = 'Usage: /stock on | off  (off stops checking prices, alerts and the status line; the watch list is kept)'
 
 export const CHIME_USAGE = 'Usage: /stock chime on | off  (every ticker)  ·  /stock AAPL chime on | off  (one ticker)'
 
@@ -30,6 +33,7 @@ export function parseCommand(args: string): Cmd {
   const tokens = args.trim().split(/\s+/).filter(Boolean)
   if (tokens.length === 0) return { kind: 'open' }
   const verb = (tokens[0] ?? '').toLowerCase()
+  if (verb === 'on' || verb === 'off') return tokens.length === 1 ? { kind: 'power', on: verb === 'on' } : { kind: 'error', text: POWER_USAGE }
   if (verb === 'chime') {
     const v = (tokens[1] ?? '').toLowerCase()
     return v === 'on' || v === 'off' ? { kind: 'chime', on: v === 'on' } : { kind: 'error', text: CHIME_USAGE }

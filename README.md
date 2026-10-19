@@ -71,7 +71,7 @@ Mods run where Claude Code runs. Install them on each machine you work on.
 | [`turn-recap`](#turn-recap) | 0.1.0 | `/recap` | A one-line TL;DR under long answers, written by Haiku 5.5 for a fraction of a cent. |
 | [`standup`](#standup) | 0.1.1 | `/standup` | Reads the day's sessions and writes a standup of what you got done, grouped by project, saved as markdown. |
 | [`session-graph`](#session-graph) | 0.1.2 | `/graph` | Alerts you when two of your sessions are covering the same ground, and pulls one's findings into the other. |
-| [`stock-watch`](#stock-watch) | 0.3.0 | `/stock` | Watches tickers, shows them under the prompt, and chimes when one reaches a low or a high you set. |
+| [`stock-watch`](#stock-watch) | 0.4.0 | `/stock` | Watches tickers, shows them under the prompt, and chimes when one reaches a low or a high you set. |
 | [`ping`](#ping) | 0.1.0 | `/ping` | A chime and a toast when a long turn finishes or is waiting for your approval, so you can walk away. |
 
 ## Every command
@@ -103,6 +103,7 @@ Type a command exactly as shown. Words in `<angle brackets>` are placeholders yo
 | `/stock add AAPL low 180 high 200` | Watches a ticker with limits. Either limit alone is fine. |
 | `/stock AAPL 180 200` | Shorthand: two prices are the low and the high. |
 | `/stock rm AAPL` | Stops watching a ticker. |
+| `/stock on` · `/stock off` | Starts or stops the whole mod: price checks, alerts and the price line. Remembered. |
 | `/stock chime off` · `on` | Silences or restores the chime for every ticker. |
 | `/stock AAPL chime off` · `on` | Silences or restores the chime for one ticker. |
 | `/stock list` · `check` · `test` | Prints the list, fetches prices now, or plays both chimes. |
@@ -121,7 +122,7 @@ Type a command exactly as shown. Words in `<angle brackets>` are placeholders yo
 | turn-recap | `/recap off` (back with `/recap on`) | Remembered |
 | standup | Nothing runs in the background; it only works when you open `/standup`. | n/a |
 | session-graph | `/graph off` (back with `/graph on`) | Remembered |
-| stock-watch | `/stock chime off` silences the sound only. There is no whole-mod off command yet: remove tickers with `/stock rm`, or disable the plugin in `/plugin`. | Remembered |
+| stock-watch | `/stock off` (back with `/stock on`). Stops price checks, alerts and the price line; the watch list is kept. `/stock chime off` only silences the sound. | Remembered |
 | ping | `/ping off` (back with `/ping on`) | Remembered |
 
 To switch any mod off completely, use the toggle next to it in `/plugin`.
@@ -437,7 +438,7 @@ An idle session re-reads the folder every minute, so a new connection reaches yo
 
 ## stock-watch
 
-*Version 0.3.0 · command `/stock`*
+*Version 0.4.0 · command `/stock`*
 
 Watch stock and crypto prices from inside Claude Code, and get a chime and a toast when one reaches a low or a high you set. Or set no limits and just keep an eye on the price.
 
@@ -456,6 +457,7 @@ A rising chime plays when a price reaches your high, a falling chime at your low
 | `/stock add AAPL low 335 high 350` | Alerts at or below 335 and at or above 350. Either limit alone is fine, and `below`, `under`, `above` and `over` work too. |
 | `/stock AAPL 335 350` | Shorthand: two prices are the low and the high, in either order. |
 | `/stock rm AAPL` | Stops watching it and removes its pill. |
+| `/stock on` · `/stock off` | Starts or stops the whole mod: price checks, alerts and the price line. Remembered. |
 | `/stock chime off` · `on` | Silences or restores the chime for every ticker. Toasts always show. |
 | `/stock AAPL chime off` · `on` | Silences or restores the chime for one ticker. |
 | `/stock list` · `check` · `test` | Prints the list, fetches prices now, or plays both chimes. |

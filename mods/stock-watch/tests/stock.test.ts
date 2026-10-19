@@ -457,3 +457,44 @@ describe('status line settings', () => {
     expect(w.statuses.at(-1)).toBe('AAPL 150.00 ▲ +1')
   })
 })
+
+describe('stock on and off', () => {
+  test('parsing: on and off take no arguments', () => {
+    expect(parseCommand('off')).toEqual({ kind: 'power', on: false })
+    expect(parseCommand('ON')).toEqual({ kind: 'power', on: true })
+    expect(parseCommand('off now')).toMatchObject({ kind: 'error', text: expect.stringContaining('/stock on | off') })
+  })
+
+  test('off stops price checks and clears the price line; nothing alerts while off', async ($, on) => {
+    const prices: Prices = { AAPL: 150 }
+    const w = world(on, prices)
+    await $.command.run(cmd('add AAPL high 160'))
+    await w.clock.advance(10)
+    const fetchedBefore = w.fetched.length
+    expect(await $.command.run(cmd('off'))).toMatchObject({ text: expect.stringContaining('Prices are not checked') })
+    expect(w.statuses.at(-1)).toBe(undefined)
+    prices.AAPL = 200
+    await w.clock.advance(5 * 60_000)
+    expect(w.fetched.length).toBe(fetchedBefore)
+    expect(w.toasts.length).toBe(0)
+  })
+
+  test('while off, check says so and a new ticker is saved but not checked', async ($, on) => {
+    const w = world(on, { AAPL: 150 })
+    await $.command.run(cmd('off'))
+    expect((await $.command.run(cmd('check'))).text).toContain('Run /stock on first')
+    expect((await $.command.run(cmd('add AAPL high 160'))).text).toContain('not checked until /stock on')
+    await w.clock.advance(60_000)
+    expect(w.fetched.length).toBe(0)
+    expect((await $.command.run(cmd('list'))).text).toContain('AAPL')
+  })
+
+  test('on resumes checking at once and the watch list is still there', async ($, on) => {
+    const w = world(on, { AAPL: 150 })
+    await $.command.run(cmd('add AAPL high 160'))
+    await $.command.run(cmd('off'))
+    expect(await $.command.run(cmd('on'))).toMatchObject({ text: 'Stock watch: on. Checking prices now.' })
+    await w.clock.advance(10)
+    expect(w.statuses.at(-1)).toBe('AAPL 150.00 ▲')
+  })
+})

@@ -1,6 +1,6 @@
 {
   "name": "stock-watch",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "/stock: watch tickers and get a chime when one reaches the low or high you set. Works any time, in any session.",
   "author": {
     "name": "Troy Lorents"
@@ -33,7 +33,7 @@
     "statusLine": {
       "type": "string",
       "title": "Status line",
-      "description": "show: tickers under the prompt, like AAPL 342.46 \u25b2 \u00b7 NVDA 227.35 \u25bc. hide: nothing under the prompt; the /stock pane and alerts still work.",
+      "description": "show: tickers under the prompt, like AAPL 342.46 ▲ · NVDA 227.35 ▼. hide: nothing under the prompt; the /stock pane and alerts still work.",
       "options": [
         "show",
         "hide"

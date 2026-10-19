@@ -90,6 +90,10 @@ Stock watch: AAPL chime on.
 - `/stock AAPL chime off` and `/stock AAPL chime on` set it for **one** ticker. A ticker with its chime off shows `chime off` on its row in the pane.
 - The Alert sound setting can also turn the chime off for good, or add a spoken ticker on macOS.
 
+## Turning it off
+
+`/stock off` stops everything: no price checks, no alerts, and the price line under the prompt is cleared. The pane stays open and shows a notice. Your tickers are kept. A ticker you add while it's off is saved but not checked until you run `/stock on`. `/stock chime off` only silences the sound, so use `/stock off` to stop the mod itself.
+
 ## Removing a ticker
 
 ```text
@@ -141,6 +145,7 @@ Stopped watching AAPL.
 | `/stock add AAPL low 180 high 200` | Watches a ticker with limits. Either limit alone is fine. |
 | `/stock AAPL 180 200` | Shorthand: the two prices become the low and the high, in either order. |
 | `/stock rm AAPL` | Stops watching it and removes its pill. |
+| `/stock on` / `/stock off` | Starts or stops the whole mod. Off stops price checks, alerts and the price line under the prompt. Your watch list is kept. Remembered across sessions. |
 | `/stock chime off` / `on` | Silences or restores the chime for every ticker. Toasts always show. |
 | `/stock AAPL chime off` / `on` | Silences or restores the chime for one ticker. Its toast still shows. |
 | `/stock list` / `check` | Prints the list, or fetches prices now. |
