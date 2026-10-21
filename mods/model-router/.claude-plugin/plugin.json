@@ -1,10 +1,23 @@
 {
   "name": "model-router",
   "version": "0.4.0",
-  "description": "Routes each turn to the cheapest model + effort that fits the task (Haiku 5.5 \u2192 Sonnet 5.5 \u2192 Opus 5.5 \u2192 Fable 5.1) and shows the ladder in a side pane.",
+  "description": "Routes each turn to the cheapest model + effort that fits the task (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and shows the ladder in a side pane.",
   "author": {
     "name": "Troy Lorents"
   },
+  "homepage": "https://github.com/TroyJLorents-GH/mod-squad",
+  "repository": "https://github.com/TroyJLorents-GH/mod-squad",
+  "documentationUrl": "https://github.com/TroyJLorents-GH/mod-squad/tree/main/mods/model-router",
+  "supportUrl": "https://github.com/TroyJLorents-GH/mod-squad/issues",
+  "license": "MIT",
+  "keywords": [
+    "model routing",
+    "cost",
+    "haiku",
+    "sonnet",
+    "opus",
+    "effort"
+  ],
   "types": "./types/index.d.ts",
   "userConfig": {
     "classifier": {

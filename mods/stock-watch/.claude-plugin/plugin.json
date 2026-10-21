@@ -5,6 +5,18 @@
   "author": {
     "name": "Troy Lorents"
   },
+  "homepage": "https://github.com/TroyJLorents-GH/mod-squad",
+  "repository": "https://github.com/TroyJLorents-GH/mod-squad",
+  "documentationUrl": "https://github.com/TroyJLorents-GH/mod-squad/tree/main/mods/stock-watch",
+  "supportUrl": "https://github.com/TroyJLorents-GH/mod-squad/issues",
+  "license": "MIT",
+  "keywords": [
+    "stocks",
+    "crypto",
+    "price alerts",
+    "tickers",
+    "status line"
+  ],
   "types": "./types/index.d.ts",
   "userConfig": {
     "watchlist": {

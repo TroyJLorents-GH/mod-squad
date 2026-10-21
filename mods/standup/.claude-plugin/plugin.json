@@ -5,6 +5,18 @@
   "author": {
     "name": "Troy Lorents"
   },
+  "homepage": "https://github.com/TroyJLorents-GH/mod-squad",
+  "repository": "https://github.com/TroyJLorents-GH/mod-squad",
+  "documentationUrl": "https://github.com/TroyJLorents-GH/mod-squad/tree/main/mods/standup",
+  "supportUrl": "https://github.com/TroyJLorents-GH/mod-squad/issues",
+  "license": "MIT",
+  "keywords": [
+    "standup",
+    "daily summary",
+    "productivity",
+    "report",
+    "markdown"
+  ],
   "types": "./types/index.d.ts",
   "userConfig": {
     "model": {

@@ -2,14 +2,35 @@
   "name": "burn-rate",
   "version": "0.1.1",
   "description": "A terminal cost dashboard (/burn): spend by day, project, model, activity, tools, shell commands and MCP servers, read from your local Claude Code transcripts and estimated at list price.",
-  "author": { "name": "Troy Lorents" },
+  "author": {
+    "name": "Troy Lorents"
+  },
+  "homepage": "https://github.com/TroyJLorents-GH/mod-squad",
+  "repository": "https://github.com/TroyJLorents-GH/mod-squad",
+  "documentationUrl": "https://github.com/TroyJLorents-GH/mod-squad/tree/main/mods/burn-rate",
+  "supportUrl": "https://github.com/TroyJLorents-GH/mod-squad/issues",
+  "license": "MIT",
+  "keywords": [
+    "cost",
+    "usage",
+    "tokens",
+    "spend",
+    "dashboard"
+  ],
   "types": "./types/index.d.ts",
   "userConfig": {
     "defaultRange": {
       "type": "string",
       "title": "Default range",
       "description": "The date range /burn opens on until you pick another in the pane.",
-      "options": ["today", "7d", "30d", "month", "6m", "lifetime"],
+      "options": [
+        "today",
+        "7d",
+        "30d",
+        "month",
+        "6m",
+        "lifetime"
+      ],
       "default": "7d"
     }
   }
