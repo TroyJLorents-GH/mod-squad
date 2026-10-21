@@ -528,3 +528,5 @@ claude plugin test mods/<name>
 ## License
 
 MIT. See [LICENSE](LICENSE). It covers every mod in this repository.
+
+See [PRIVACY.md](PRIVACY.md) for what each mod reads, sends and stores.
