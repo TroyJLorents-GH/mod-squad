@@ -108,6 +108,17 @@ Limits:
 - The local-date offset is read once per scan, so days across a DST change may be off by an hour at midnight.
 - Each response is counted once within its own file. If a resumed or forked session copies earlier responses into a new file, those responses are counted in both files.
 
+## What it hooks
+
+Every hook passes the event on. None of them changes a prompt, a tool call or an answer.
+
+| Hook | What it does |
+| --- | --- |
+| `session.start` | Registers `/burn` and restores the range you last picked. If you have used `/burn` before, it schedules one refresh 5 seconds later. |
+| `turn.complete` | Adds the finished turn's cost, from its token usage, to the total shown under the prompt. |
+| `command.run` | Handles `/burn`. |
+| `ui.render` | Draws the dashboard pane. |
+
 ## Develop
 
 ```

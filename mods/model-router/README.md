@@ -26,3 +26,16 @@ Test: `claude plugin test mods/model-router`. Validate: `claude plugin validate 
 - **Classifier model** (`classifierModel`, default `haiku`): The model that grades each prompt: haiku, sonnet, opus or fable. Haiku is cheapest. Sonnet grades more carefully for about 20x the cost. |
 - **Starting floor** (`floor`, default `haiku`): The cheapest model a new turn may start on. `haiku` means no floor. `sonnet` starts every turn on Sonnet or higher. The highest model allowed still caps it. |
 
+## What it hooks
+
+Every hook passes the event on. None of them blocks a tool call or rewrites your prompt.
+
+| Hook | What it does |
+| --- | --- |
+| `session.start` | Registers `/route`, restores the mode or pin you last chose, and opens the ladder pane. |
+| `prompt.submit` | In `auto` mode, grades your prompt (with a short Haiku call, or the keyword rules) and records the pick. Your prompt is sent unchanged. Slash commands are skipped. |
+| `turn.step` | Sets the model and effort for each main-loop step to the picked rung. Subagents keep the model their definition asks for. With routing off, it only records which model ran. |
+| `tool.call` | Watches the turn to decide whether to step up: risky shell commands such as `terraform apply` or `rm -rf`, every second failed tool call, and six or more edited files. The tool call itself runs unchanged. |
+| `turn.complete` | Records what the turn cost, for the pane and the session total. |
+| `command.run` | Handles `/route`. |
+| `ui.render` | Draws the ladder pane, and the one-line band above the prompt. |

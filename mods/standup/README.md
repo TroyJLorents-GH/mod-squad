@@ -42,6 +42,16 @@ _2 sessions · 5 files changed · 3 commits_
 | `folder` | blank (`~/standups`) | Where each standup is saved. Type `off` to save nothing. |
 | `maxSessions` | 40 | Most sessions summarized per standup, newest activity first. |
 
+## What it hooks
+
+Every hook passes the event on. None of them changes a prompt, a tool call or an answer.
+
+| Hook | What it does |
+| --- | --- |
+| `session.start` | Registers `/standup` and restores the last standup you generated, so the pane shows it. |
+| `command.run` | Handles `/standup`. |
+| `ui.render` | Draws the standup pane. |
+
 ## Limits
 
 - It reads the transcripts on the machine it runs on. Cloud sessions, and sessions on your other computers, are not included.

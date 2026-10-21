@@ -176,6 +176,17 @@ Open the plugin's settings to change these. Tickers themselves go in the Watch l
 | `statusLine` | `show` | `show` puts the tickers under the prompt. `hide` leaves that line empty. The pane and the alerts still work. |
 | `statusCount` | 3 | How many tickers the status line shows, 1 to 5. The rest show as `+N`. |
 
+## What it hooks
+
+Every hook passes the event on. None of them changes a prompt, a tool call or an answer.
+
+| Hook | What it does |
+| --- | --- |
+| `session.start` | Registers `/stock`, loads your saved tickers, applies the Watch list setting, and starts the price checks (unless you turned the mod off). |
+| `prompt.submit` | Starts the price checks if the session missed its start signal. Your prompt is sent unchanged. |
+| `command.run` | Handles `/stock`. |
+| `ui.render` | Draws the stock pane. |
+
 ## Limits
 
 - **It only watches while a session is open.** There is no background service. Close every session and the alerts stop.

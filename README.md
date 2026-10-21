@@ -524,3 +524,7 @@ List it in `.claude-plugin/marketplace.json`, then:
 claude plugin validate mods/<name>
 claude plugin test mods/<name>
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE). It covers every mod in this repository.
