@@ -64,12 +64,12 @@ Mods run where Claude Code runs. Install them on each machine you work on.
 | Mod | Version | Command | What it does |
 | --- | --- | --- | --- |
 | [`model-router`](#model-router) | 0.4.0 | `/route` | Picks the cheapest model and effort for every turn (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and draws a live green → red cost ladder. |
-| [`burn-rate`](#burn-rate) | 0.1.1 | `/burn` | A cost dashboard: spend by day, project, model, activity, tool and shell command, read from your local transcripts. |
+| [`burn-rate`](#burn-rate) | 0.1.2 | `/burn` | A cost dashboard: spend by day, project, model, activity, tool and shell command, read from your local transcripts. |
 | [`context-gauge`](#context-gauge) | 0.1.0 | `/gauge` | A band above the prompt showing how full the context window is, with a toast before it fills up. |
 | [`safety-net`](#safety-net) | 0.1.0 | `/safety-net` | Blocks force-pushes, `git reset --hard`, `rm -rf ~`, `terraform destroy`, piping a download into a shell, and writes to `.env` and key files, and tells Claude why. |
 | [`secret-scrubber`](#secret-scrubber) | 0.1.0 | `/scrub` | Redacts API keys, tokens, JWTs and private keys from tool output before anything stores or reads it. |
 | [`turn-recap`](#turn-recap) | 0.1.0 | `/recap` | A one-line TL;DR under long answers, written by Haiku 5.5 for a fraction of a cent. |
-| [`standup`](#standup) | 0.1.1 | `/standup` | Reads the day's sessions and writes a standup of what you got done, grouped by project, saved as markdown. |
+| [`standup`](#standup) | 0.1.2 | `/standup` | Reads the day's sessions and writes a standup of what you got done, grouped by project, saved as markdown. |
 | [`session-graph`](#session-graph) | 0.1.2 | `/graph` | Alerts you when two of your sessions are covering the same ground, and pulls one's findings into the other. |
 | [`stock-watch`](#stock-watch) | 0.4.0 | `/stock` | Watches tickers, shows them under the prompt, and chimes when one reaches a low or a high you set. |
 | [`ping`](#ping) | 0.1.0 | `/ping` | A chime and a toast when a long turn finishes or is waiting for your approval, so you can walk away. |
@@ -197,7 +197,7 @@ Prices used for cost ($ per million tokens, input / output): Haiku 5.5 0.10 / 0.
 
 ## burn-rate
 
-*Version 0.1.1 · command `/burn`*
+*Version 0.1.2 · command `/burn`*
 
 A cost dashboard inside Claude Code. `/burn` opens a pane that shows where your tokens went, read from the session transcripts Claude Code already keeps on your machine.
 
@@ -356,7 +356,7 @@ Adds a one-line **TL;DR** beneath long answers. When a main-loop turn ends with 
 
 ## standup
 
-*Version 0.1.1 · command `/standup`*
+*Version 0.1.2 · command `/standup`*
 
 Click **Generate** and get a written standup of what you got done, grouped by project, from your local Claude Code sessions.
 

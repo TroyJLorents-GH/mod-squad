@@ -42,6 +42,15 @@ _2 sessions · 5 files changed · 3 commits_
 | `folder` | blank (`~/standups`) | Where each standup is saved. Type `off` to save nothing. |
 | `maxSessions` | 40 | Most sessions summarized per standup, newest activity first. |
 
+## What it reads, runs and sends
+
+- **Reads:** only the transcript files Claude Code keeps, the `*.jsonl` files under `~/.claude/projects/` (and under `$CLAUDE_CONFIG_DIR/projects/` if that is set), for the day you pick. It never opens Claude Code's settings or credentials files. The only environment variables it reads are `HOME` (or `USERPROFILE` on Windows) to find your home folder, and `CLAUDE_CONFIG_DIR`.
+- **Sends:** when you press **Generate**, one call per session to a Claude model, through Claude Code's own model access. The call carries that session's digest: what you asked, the commits it made, the files it changed and the closing message, clipped to about 6 KB. It makes no other network call.
+- **Runs:** two programs, each by name with no shell:
+  - `date +%z`, for your local UTC offset, so the right day's work is picked. The mod's own clock may run in UTC.
+  - `tail -c 3500000 <transcript>`, only for a transcript over 4 MiB, to read its last 3.5 MB, because `$.fs.read` reads at most 4 MiB at once.
+- **Stores:** the standup as `YYYY-MM-DD.md` in `~/standups` (or your Save folder; `off` saves nothing), plus the last standup and each session's summary in the mod's own store on your machine.
+
 ## What it hooks
 
 Every hook passes the event on. None of them changes a prompt, a tool call or an answer.

@@ -291,13 +291,14 @@ describe('standup', () => {
     expect(Object.keys(w.written).length).toBe(0)
   })
 
-  test('files over 4 MiB are read from their tail through the shell', async ($, on) => {
+  test('files over 4 MiB are read from their tail through tail, with no shell', async ($, on) => {
     const big = { ...files(), [MAIN]: { text: webSession(), mtime: Date.parse('2026-10-08T09:02:00Z'), size: 5_000_000 } }
     let tailed = false
     const w = world(on, big, replies, argv => {
-      if (argv[0] !== 'sh') return '+0000\n'
+      if (argv[0] !== 'tail') return '+0000\n'
+      expect(argv).toEqual(['tail', '-c', '3500000', MAIN])
       tailed = true
-      return big[argv[5] as keyof typeof big]!.text
+      return big[argv[3] as keyof typeof big]!.text
     })
     await $.command.run(cmd('today'))
     await w.clock.advance(10)

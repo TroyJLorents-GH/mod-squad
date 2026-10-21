@@ -1,6 +1,6 @@
 {
   "name": "standup",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "/standup: click Generate and get a written standup of everything you got done today, grouped by project, from your local Claude Code sessions.",
   "author": {
     "name": "Troy Lorents"

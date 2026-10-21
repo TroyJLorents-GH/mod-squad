@@ -78,7 +78,8 @@ async function walk($: EngineInterface, dir: string, depth: number, out: Found[]
 
 async function readTranscript($: EngineInterface, f: Found): Promise<string> {
   if (f.size <= FS_READ_MAX) return $.fs.read(f.path)
-  const r = await $.process.run(['sh', '-c', 'tail -c "$1" "$2"', 'standup', String(TAIL_BYTES), f.path], { timeoutMs: 30_000 })
+  // Its last TAIL_BYTES, which cover recent days: `tail` run by name, no shell.
+  const r = await $.process.run(['tail', '-c', String(TAIL_BYTES), f.path], { timeoutMs: 30_000 })
   return r.stdout
 }
 

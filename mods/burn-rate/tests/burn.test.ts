@@ -76,16 +76,17 @@ function world(on: On, files: Record<string, FakeFile>, now = Date.parse('2026-1
   mock.store(on)
   mock.env(on, { HOME: '/h' })
   const chunks: string[] = []
-  // `date +%z`, and the `tail -c +N file | head -c M` pipeline used for files over 4 MiB.
+  // `date +%z`, and `tail -c +N file` for files over 4 MiB; like the engine, keep the first 4 MiB of its output.
   on('process.run', ($, e) => {
     const argv = (e as { argv: string[] }).argv
-    if (argv[0] === 'sh') {
-      const from = Number(argv[4]) - 1
-      const path = argv[5] ?? ''
+    if (argv[0] === 'tail') {
+      const from = Number((argv[2] ?? '+1').slice(1)) - 1
+      const path = argv[3] ?? ''
       chunks.push(path)
       const bytes = new TextEncoder().encode(files[path]?.text ?? '')
-      const out = bytes.slice(from, from + Number(argv[6]))
-      return { value: { exitCode: 0, stdout: new TextDecoder().decode(out), stderr: '' } } as never
+      const out = bytes.slice(from, from + 4_194_304)
+      const isStdoutTruncated = bytes.length - from > 4_194_304
+      return { value: { exitCode: 0, stdout: new TextDecoder().decode(out), stderr: '', isStdoutTruncated } } as never
     }
     return { value: { exitCode: 0, stdout: '+0000\n', stderr: '' } } as never
   })
@@ -386,12 +387,35 @@ describe('dashboard', () => {
     await again.unmount()
   })
 
-  test('files over 4 MiB are read in chunks through the shell, not $.fs.read', async ($, on) => {
+  test('files over 4 MiB are read in chunks through tail, not $.fs.read', async ($, on) => {
     const w = world(on, { [MAIN]: { text: fixture(), mtime: 100, size: 5_000_000 } })
     await burn($)
     await w.clock.advance(10)
     expect(w.reads[MAIN]).toBe(undefined)
     expect(w.chunks.length > 0).toBe(true)
+    const ui = await pane($, 'terminal')
+    expect(await ui.find({ type: 'Text', text: /2 calls/ })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('a transcript larger than one 4 MiB read is read across several reads, nothing counted twice', async ($, on) => {
+    // About 4.5 MB of rows that never count, then the real calls.
+    const filler = `{"type":"summary","summary":"${'a'.repeat(1000)}"}\n`.repeat(4500)
+    const text = filler + fixture()
+    const w = world(on, { [MAIN]: { text, mtime: 100, size: new TextEncoder().encode(text).length } })
+    await burn($)
+    await w.clock.advance(10)
+    expect(w.chunks.length >= 2).toBe(true)
+    const ui = await pane($, 'terminal')
+    expect(await ui.find({ type: 'Text', text: /2 calls/ })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('a single line longer than a whole read is skipped, and the calls after it still count', async ($, on) => {
+    const text = `{"type":"summary","summary":"${'b'.repeat(5_000_000)}"}\n` + fixture()
+    const w = world(on, { [MAIN]: { text, mtime: 100, size: new TextEncoder().encode(text).length } })
+    await burn($)
+    await w.clock.advance(10)
     const ui = await pane($, 'terminal')
     expect(await ui.find({ type: 'Text', text: /2 calls/ })).toBeDefined()
     await ui.unmount()

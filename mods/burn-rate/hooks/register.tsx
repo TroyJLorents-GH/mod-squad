@@ -12,8 +12,8 @@ import { costOf } from './pricing'
 const PANE = 'burn-rate'
 /** Files up to this size are read whole with $.fs.read (which refuses anything over 4 MiB). */
 const FS_READ_MAX = 4_000_000
-/** Larger files are read this many bytes at a time through `tail | head`. */
-const CHUNK = 3_000_000
+/** What `$.process.run` keeps of a program's output: a larger file is read this much at a time through `tail`. */
+const TAIL_MAX = 4_194_304
 /** Lists kept per view (the pane shows fewer). */
 const KEEP = 40
 const STORE_PREFIX = 'f:'
@@ -73,21 +73,13 @@ async function discover($: EngineInterface): Promise<Found[]> {
   return out.filter(f => (seen.has(f.path) ? false : (seen.add(f.path), true)))
 }
 
-/** `count` bytes of `path` from byte `from`, through the shell (for files $.fs.read refuses). */
-async function readChunk($: EngineInterface, path: string, from: number, count: number): Promise<string> {
-  const r = await $.process.run(
-    ['sh', '-c', 'tail -c +"$1" "$2" | head -c "$3"', 'burn-rate', String(from + 1), path, String(count)],
-    { timeoutMs: 30_000 },
-  )
-  return r.stdout
-}
-
-/** Bytes in the line starting at `from` (for a single line longer than a chunk, which is skipped). */
-async function lineLength($: EngineInterface, path: string, from: number): Promise<number> {
-  const r = await $.process.run(['sh', '-c', 'tail -c +"$1" "$2" | head -n 1 | wc -c', 'burn-rate', String(from + 1), path], {
-    timeoutMs: 30_000,
-  })
-  return Number(r.stdout.trim()) || 0
+/**
+ * `path` from byte `from` on, for files `$.fs.read` refuses: `tail` run by name, no shell. The engine keeps the
+ * first 4 MiB of its output and says when it cut the rest, so each call reads at most one chunk.
+ */
+async function readFrom($: EngineInterface, path: string, from: number): Promise<{ text: string; isCut: boolean }> {
+  const r = await $.process.run(['tail', '-c', `+${from + 1}`, path], { timeoutMs: 30_000 })
+  return { text: r.stdout, isCut: r.isStdoutTruncated === true }
 }
 
 async function storedState($: EngineInterface, path: string): Promise<FileState | undefined> {
@@ -111,12 +103,13 @@ async function scanFile($: EngineInterface, f: Found, tz: number): Promise<{ sta
     state.off += parseText(state, text.slice(indexAtByte(text, state.off)), tz)
   } else {
     for (let guard = 0; state.off < f.size && guard < 10_000; guard++) {
-      const text = await readChunk($, f.path, state.off, CHUNK)
+      const { text, isCut } = await readFrom($, f.path, state.off)
       if (text === '') break
       const used = parseText(state, text, tz)
       if (used > 0) state.off += used
-      else if (text.length < CHUNK && !text.includes('\n')) break // a partial last line still being written
-      else state.off += Math.max(1, await lineLength($, f.path, state.off))
+      else if (!isCut) break // a partial last line still being written
+      // One line longer than a whole read: step past this chunk; the fragment the next read starts with is not a JSON line, so it is skipped.
+      else state.off += TAIL_MAX
     }
   }
   state.size = f.size

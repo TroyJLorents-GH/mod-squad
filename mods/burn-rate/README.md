@@ -97,16 +97,25 @@ Each turn is classified from its prompt's words and the tools it used. The first
 Scans never run inside a hook. `/burn`, the `r` button, and a refresh 5 seconds after session start (only once you've used `/burn` before) each start a scan on a `$.clock` timer. The pane says "scanning…" while one runs.
 
 - Each file's aggregate (per day: per-model tokens and cost, activity, tool, shell and MCP counts) is kept in the mod's `$.store` with the file's size, mtime and the byte offset parsed so far. A file whose size and mtime haven't changed is not read again. A file that grew is parsed only from the stored offset.
-- Files up to 4 MB are read with `$.fs.read`, which refuses anything over 4 MiB. Larger files are read 3 MB at a time from the stored offset with `sh -c 'tail -c +N file | head -c M'` through `$.process.run`. A single line longer than a chunk is skipped.
+- Files up to 4 MB are read with `$.fs.read`, which refuses anything over 4 MiB. Larger files are read from the stored offset with `tail -c +N <file>`, run by name through `$.process.run` with no shell. The engine keeps the first 4 MiB of a program's output, so each read is at most one 4 MiB chunk. A single line longer than a chunk is skipped.
 - Aggregates of transcripts that Claude Code has since cleaned up (`cleanupPeriodDays`) stay in the store, so Lifetime keeps them.
 - The status line adds the cost of each finished turn (from `turn.complete`'s usage) to the last scan's total for today, so it costs nothing to compute.
 
 Limits:
 
-- Reading files over 4 MB needs `sh`, `tail` and `head` on the host. They are present on macOS and Linux; on Windows such files are skipped, and the pane says how many.
+- Reading files over 4 MB needs `tail` on the host. It is present on macOS and Linux; on Windows such files are skipped, and the pane says how many.
 - `$.store` holds 4 MiB of JSON in all, which is about 2 KB per transcript. If a very large history fills it, the aggregates that don't fit are kept in memory for the session but not saved, so the next session parses those files again.
 - The local-date offset is read once per scan, so days across a DST change may be off by an hour at midnight.
 - Each response is counted once within its own file. If a resumed or forked session copies earlier responses into a new file, those responses are counted in both files.
+
+## What it reads, runs and sends
+
+- **Reads:** only the transcript files Claude Code keeps, every `*.jsonl` under `~/.claude/projects/` (and under `$CLAUDE_CONFIG_DIR/projects/` if that is set). It never opens Claude Code's settings or credentials files. The only environment variables it reads are `HOME` (or `USERPROFILE` on Windows) to find your home folder, and `CLAUDE_CONFIG_DIR`.
+- **Sends:** nothing. It makes no network calls and no model calls. Everything it counts stays on your machine.
+- **Runs:** two programs, each by name with no shell:
+  - `date +%z`, once per scan, for your local UTC offset, so each call lands on the right day. The mod's own clock may run in UTC.
+  - `tail -c +N <transcript>`, only for a transcript over 4 MiB, because `$.fs.read` reads at most 4 MiB at once. `N` is the byte offset where the last read stopped, and the file is always one of the transcripts above. Its output is the file's text, which burn-rate counts.
+- **Stores:** per-file token and cost totals, and the range you picked, in the mod's own store on your machine.
 
 ## What it hooks
 
