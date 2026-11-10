@@ -63,7 +63,7 @@ Mods run where Claude Code runs. Install them on each machine you work on.
 
 | Mod | Version | Command | What it does |
 | --- | --- | --- | --- |
-| [`model-router`](#model-router) | 0.4.0 | `/route` | Picks the cheapest model and effort for every turn (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and draws a live green → red cost ladder. |
+| [`model-router`](#model-router) | 0.5.0 | `/route` | Picks the cheapest model and effort for every turn (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.2 or 5.1) and draws a live green → red cost ladder. |
 | [`burn-rate`](#burn-rate) | 0.1.2 | `/burn` | A cost dashboard: spend by day, project, model, activity, tool and shell command, read from your local transcripts. |
 | [`context-gauge`](#context-gauge) | 0.1.0 | `/gauge` | A band above the prompt showing how full the context window is, with a toast before it fills up. |
 | [`safety-net`](#safety-net) | 0.1.0 | `/safety-net` | Blocks force-pushes, `git reset --hard`, `rm -rf ~`, `terraform destroy`, piping a download into a shell, and writes to `.env` and key files, and tells Claude why. |
@@ -148,13 +148,13 @@ Model calls default to Haiku 5.5, the cheapest model. The mods that call a model
 
 ## model-router
 
-*Version 0.4.0 · command `/route`*
+*Version 0.5.0 · command `/route`*
 
 Routes each turn to the cheapest model and effort that fits the task, and shows the cost ladder.
 
 ![model-router pane: 4 models x 5 effort levels, lit dots shaded green to red, the active rung marked](docs/model-router-pane.png)
 
-**The ladder.** Four models (Haiku 5.5, Sonnet 5.5, Opus 5.5, Fable 5.1) times five effort levels (low, medium, high, xhigh, max) make 20 dots. Every lit dot is a rung at or below what is running now, shaded green → orange → red as it gets costlier, and `◉` marks the current model and effort. Below the ladder it shows why it was picked, what the last turn cost, and the running session total.
+**The ladder.** Four models (Haiku 5.5, Sonnet 5.5, Opus 5.5, and Fable 5.2 or 5.1, set by `fableVersion`) times five effort levels (low, medium, high, xhigh, max) make 20 dots. Every lit dot is a rung at or below what is running now, shaded green → orange → red as it gets costlier, and `◉` marks the current model and effort. Below the ladder it shows why it was picked, what the last turn cost, and the running session total.
 
 **How it picks.**
 - Haiku 5.5 grades each prompt. If that call is refused or fails, keyword rules take over.
@@ -189,11 +189,12 @@ The decision text and the cost line are added when that band is at least 80 colu
 | `classifier` | `haiku` | `haiku`: a Haiku call grades each prompt, with keyword rules as the fallback. `heuristic`: keyword scoring only, zero cost. |
 | `classifierModel` | `haiku` | Which model grades prompts: `haiku`, `sonnet`, `opus` or `fable`. Sonnet grades more carefully for about 20x the cost. |
 | `floor` | `haiku` | The cheapest model a new turn may start on, at low effort. `haiku` means no floor. `sonnet` starts every turn on Sonnet or higher. The highest model allowed still caps it. |
+| `fableVersion` | `5.2` | Which Fable runs on the top rung: `5.2` ($8 / $40 per million tokens) or `5.1` ($10 / $50). Applies to routed turns, `/route pin fable` and the Fable classifier. |
 | `ceiling` | `fable` | The highest model it may pick. A cost cap. |
 | `band` | `auto` | `auto`: the one-line ladder shows where side panes aren't drawn (the desktop app). `always`: on every surface. `never`: side pane only. |
 | `stickiness` | 3 | How many dots lower a new pick must be before it steps down while the cache is warm. `0` turns the hold off; `1` follows any drop. Upgrades always apply at once. |
 
-Prices used for cost ($ per million tokens, input / output): Haiku 5.5 0.10 / 0.50 (0.50 / 2.50 for prompts over 100k tokens), Sonnet 5.5 2 / 10, Opus 5.5 4 / 20, Fable 5.1 10 / 50. [More in the mod's README.](mods/model-router)
+Prices used for cost ($ per million tokens, input / output): Haiku 5.5 0.10 / 0.50 (0.50 / 2.50 for prompts over 100k tokens), Sonnet 5.5 2 / 10, Opus 5.5 4 / 20, Fable 5.2 8 / 40, Fable 5.1 10 / 50. [More in the mod's README.](mods/model-router)
 
 ## burn-rate
 

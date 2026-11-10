@@ -1,7 +1,7 @@
 {
   "name": "model-router",
-  "version": "0.4.0",
-  "description": "Routes each turn to the cheapest model + effort that fits the task (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and shows the ladder in a side pane.",
+  "version": "0.5.0",
+  "description": "Routes each turn to the cheapest model + effort that fits the task (Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.2 or 5.1) and shows the ladder in a side pane.",
   "author": {
     "name": "Troy Lorents"
   },
@@ -42,6 +42,16 @@
         "fable"
       ],
       "default": "haiku"
+    },
+    "fableVersion": {
+      "type": "string",
+      "title": "Fable version",
+      "description": "Which Fable runs on the top rung, for routed turns, /route pin fable and the Fable classifier. 5.2 ($8/$40 per MTok) is the current model; 5.1 ($10/$50) is the earlier one. A blank value uses 5.2.",
+      "options": [
+        "5.2",
+        "5.1"
+      ],
+      "default": "5.2"
     },
     "floor": {
       "type": "string",

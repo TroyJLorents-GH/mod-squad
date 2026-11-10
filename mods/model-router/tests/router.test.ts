@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { classifyHeuristic, colorAt, labelAt, rungOf } from '../hooks/ladder'
+import { FABLES, classifierSystem, classifyHeuristic, colorAt, costUsd, labelAt, rungOf } from '../hooks/ladder'
 
 // Stands in for the engine beneath the router: records what each step asked for.
 const asked: string[] = []
@@ -48,7 +48,7 @@ describe('model-router', () => {
     const sent = world(on, '{"model":"fable","effort":"high","reason":"novel algorithm"}')
     await $.prompt.submit({ text: 'design a lock-free queue and prove it linearizable', wait: false })
     await drain($.turn.step(step))
-    expect(sent[0]).toEqual({ model: 'claude-fable-5-1', effort: 'high' })
+    expect(sent[0]).toEqual({ model: 'claude-fable-5-2', effort: 'high' })
   })
 
   test('the ceiling caps the pick', { options: { ceiling: 'opus' } }, async ($, on) => {
@@ -178,5 +178,45 @@ describe('model-router settings', () => {
     await $.prompt.submit({ text: 'design a lock-free queue', wait: false })
     await drain($.turn.step(step))
     expect(sent[0]).toEqual({ model: 'claude-opus-5-5', effort: 'high' })
+  })
+
+  test('Fable version 5.1 runs Fable 5.1 on the top rung', { options: { fableVersion: '5.1' } }, async ($, on) => {
+    const sent = world(on, '{"model":"fable","effort":"high","reason":"novel algorithm"}')
+    await $.prompt.submit({ text: 'design a lock-free queue and prove it linearizable', wait: false })
+    await drain($.turn.step(step))
+    expect(sent[0]).toEqual({ model: 'claude-fable-5-1', effort: 'high' })
+    const ui = await $.ui.mount({ plugin: 'model-router', surface: 'terminal', component: 'Pane', requestId: 'model-router', props: { title: 'Model router', isFocused: false, bodyColumns: 40 } } as never)
+    expect(await ui.find({ type: 'Text', text: /Fable 5\.1 · high/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /Fable 5\.2/ })).toBeUndefined()
+    await ui.unmount()
+  })
+
+  test('/route pin fable uses the chosen Fable version', { options: { fableVersion: '5.1' } }, async ($, on) => {
+    const sent = world(on)
+    await $.command.run({ command: 'route', args: 'pin fable xhigh', origin: { kind: 'composer' }, presentation: { isFullscreen: true, columns: 200 } } as never)
+    await $.prompt.submit({ text: 'fix typo', wait: false })
+    await drain($.turn.step(step))
+    expect(sent[0]).toEqual({ model: 'claude-fable-5-1', effort: 'xhigh' })
+  })
+
+  test('the Fable classifier follows the Fable version', { options: { classifierModel: 'fable', fableVersion: '5.1' } }, async ($, on) => {
+    world(on)
+    await $.prompt.submit({ text: 'git status please', wait: false })
+    expect(asked).toEqual(['claude-fable-5-1'])
+  })
+
+  test('an unknown Fable version falls back to 5.2', { options: { fableVersion: '9.9' } }, async ($, on) => {
+    const sent = world(on)
+    await $.command.run({ command: 'route', args: 'pin fable high', origin: { kind: 'composer' }, presentation: { isFullscreen: true, columns: 200 } } as never)
+    await $.prompt.submit({ text: 'x', wait: false })
+    await drain($.turn.step(step))
+    expect(sent[0]?.model).toBe('claude-fable-5-2')
+  })
+
+  test('the classifier prompt and costs name each Fable version', async () => {
+    expect(classifierSystem(FABLES['5.2'])).toContain('fable (Fable 5.2, $8/$40')
+    expect(classifierSystem(FABLES['5.1'])).toContain('fable (Fable 5.1, $10/$50')
+    expect(costUsd({ model: 'claude-fable-5-2', input_tokens: 1_000_000, output_tokens: 1_000_000 }).toFixed(2)).toBe('48.00')
+    expect(costUsd({ model: 'claude-fable-5-1', input_tokens: 1_000_000, output_tokens: 1_000_000 }).toFixed(2)).toBe('60.00')
   })
 })

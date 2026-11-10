@@ -1,7 +1,7 @@
 # model-router
 
 Routes each Claude Code turn to the cheapest model + effort that fits the task
-(Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.1) and shows the cost ladder in a side pane.
+(Haiku 5.5 → Sonnet 5.5 → Opus 5.5 → Fable 5.2, or Fable 5.1 if you choose) and shows the cost ladder in a side pane.
 
 ```
 /plugin marketplace add troyjlorents-gh/mod-squad
@@ -15,15 +15,16 @@ Routes each Claude Code turn to the cheapest model + effort that fits the task
 - **Pane:** 4 models x 5 efforts (20 dots), lit dots green → orange → red, `◉` = current.
 - **Band (desktop app):** where a side pane isn't drawn, the same ladder shows as one line above the prompt: `router  Haiku ●●●●● Sonnet ●●●●● Opus ●●●◉○ Fable ○○○○○  ▶ Opus 5.5 · xhigh`. Setting `band`: `auto` (default, anywhere but the terminal), `always`, `never`.
 - **Commands:** `/route`, `/route auto`, `/route off`, `/route pin <haiku|sonnet|opus|fable> [effort]`.
-- **Settings:** `classifier` (haiku|heuristic), `ceiling` (haiku|sonnet|opus|fable), `band` (auto|always|never), `stickiness`.
+- **Settings:** `classifier` (haiku|heuristic), `classifierModel`, `fableVersion` (5.2|5.1), `floor`, `ceiling` (haiku|sonnet|opus|fable), `band` (auto|always|never), `stickiness`.
 
-Prices ($/MTok in/out): Haiku 5.5 0.10/0.50 (0.50/2.50 over 100k-token prompts), Sonnet 5.5 2/10, Opus 5.5 4/20, Fable 5.1 10/50.
+Prices ($/MTok in/out): Haiku 5.5 0.10/0.50 (0.50/2.50 over 100k-token prompts), Sonnet 5.5 2/10, Opus 5.5 4/20, Fable 5.2 8/40, Fable 5.1 10/50.
 
 Test: `claude plugin test mods/model-router`. Validate: `claude plugin validate mods/model-router`.
 
-## Classifier and starting floor
+## Classifier, Fable version and starting floor
 
 - **Classifier model** (`classifierModel`, default `haiku`): The model that grades each prompt: haiku, sonnet, opus or fable. Haiku is cheapest. Sonnet grades more carefully for about 20x the cost. |
+- **Fable version** (`fableVersion`, default `5.2`): Which Fable runs on the top rung: `5.2` (`claude-fable-5-2`, $8/$40 per MTok) or `5.1` (`claude-fable-5-1`, $10/$50). It applies everywhere `fable` appears: routed turns, `/route pin fable`, the Fable classifier and the cost shown in the pane. The pane and band label the rung with the version, for example `Fable 5.2 · high`.
 - **Starting floor** (`floor`, default `haiku`): The cheapest model a new turn may start on. `haiku` means no floor. `sonnet` starts every turn on Sonnet or higher. The highest model allowed still caps it. |
 
 ## What it hooks

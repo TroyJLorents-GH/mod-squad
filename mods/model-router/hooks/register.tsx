@@ -3,12 +3,12 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import type { Decision, Effort, Mode, ModelKey } from '../types'
 import {
-  CLASSIFIER_SYSTEM,
   EFFORTS,
   MODELS,
   bump,
   clamp,
   classifierPrompt,
+  classifierSystem,
   classifyHeuristic,
   colorAt,
   commandFloor,
@@ -19,6 +19,7 @@ import {
   parseClassifier,
   rungFromSession,
   rungOf,
+  useFable,
 } from './ladder'
 
 const PANE = 'model-router'
@@ -32,7 +33,15 @@ const lastTurn = atom({ plugin: 'model-router', key: 'lastTurn' } as const, null
 const sessionUsd = atom({ plugin: 'model-router', key: 'sessionUsd' } as const, 0)
 const pin = atom({ plugin: 'model-router', key: 'pin' } as const, rungOf('opus', 'medium'))
 
-type Options = { classifier?: string; classifierModel?: string; floor?: string; ceiling?: string; stickiness?: number; band?: string }
+type Options = {
+  classifier?: string
+  classifierModel?: string
+  fableVersion?: string
+  floor?: string
+  ceiling?: string
+  stickiness?: number
+  band?: string
+}
 
 async function setMode($: EngineInterface, next: Mode, pinned?: number) {
   await update($, mode, () => next)
@@ -52,6 +61,7 @@ async function raise($: EngineInterface, floor: number, reason: string, ceiling:
 
 export const register: Register = (on, options) => {
   const opts = (options ?? {}) as Options
+  useFable(opts.fableVersion)
   const ceiling = (opts.ceiling ?? 'fable') as ModelKey
   const stickiness = Math.max(0, Number(opts.stickiness ?? 3))
   const classifierKey = (MODELS.find(m => m.key === opts.classifierModel)?.key ?? 'haiku') as ModelKey
@@ -91,7 +101,7 @@ export const register: Register = (on, options) => {
       const r = await $.model
         .complete({
           model: classifierId,
-          system: CLASSIFIER_SYSTEM,
+          system: classifierSystem(),
           prompt: classifierPrompt(e.text, current),
           effort: 'low',
           maxTokens: 120,

@@ -2,17 +2,7 @@ import type { Effort, ModelKey } from '../types'
 
 export const EFFORTS: readonly Effort[] = ['low', 'medium', 'high', 'xhigh', 'max']
 
-// Cheapest first. Prices are $/MTok (input, output, cache read). Haiku 5.5 bills a higher
-// tier once a prompt passes 100k tokens.
-export const MODELS = [
-  {
-    key: 'haiku', id: 'claude-haiku-5-5', label: 'Haiku 5.5', input: 0.1, output: 0.5, cacheRead: 0.01,
-    long: { input: 0.5, output: 2.5, cacheRead: 0.05 },
-  },
-  { key: 'sonnet', id: 'claude-sonnet-5-5', label: 'Sonnet 5.5', input: 2, output: 10, cacheRead: 0.2 },
-  { key: 'opus', id: 'claude-opus-5-5', label: 'Opus 5.5', input: 4, output: 20, cacheRead: 0.2 },
-  { key: 'fable', id: 'claude-fable-5-1', label: 'Fable 5.1', input: 10, output: 50, cacheRead: 0.25 },
-] as const satisfies readonly {
+export type ModelInfo = {
   key: ModelKey
   id: string
   label: string
@@ -20,9 +10,34 @@ export const MODELS = [
   output: number
   cacheRead: number
   long?: { input: number; output: number; cacheRead: number }
-}[]
+}
 
-export type ModelInfo = (typeof MODELS)[number]
+// The Fable rung runs whichever version the Fable version setting picks.
+export const FABLES = {
+  '5.2': { key: 'fable', id: 'claude-fable-5-2', label: 'Fable 5.2', input: 8, output: 40, cacheRead: 0.2 },
+  '5.1': { key: 'fable', id: 'claude-fable-5-1', label: 'Fable 5.1', input: 10, output: 50, cacheRead: 0.25 },
+} as const satisfies Record<string, ModelInfo>
+
+export type FableVersion = keyof typeof FABLES
+
+// Cheapest first. Prices are $/MTok (input, output, cache read). Haiku 5.5 bills a higher
+// tier once a prompt passes 100k tokens.
+export const MODELS: [ModelInfo, ModelInfo, ModelInfo, ModelInfo] = [
+  {
+    key: 'haiku', id: 'claude-haiku-5-5', label: 'Haiku 5.5', input: 0.1, output: 0.5, cacheRead: 0.01,
+    long: { input: 0.5, output: 2.5, cacheRead: 0.05 },
+  },
+  { key: 'sonnet', id: 'claude-sonnet-5-5', label: 'Sonnet 5.5', input: 2, output: 10, cacheRead: 0.2 },
+  { key: 'opus', id: 'claude-opus-5-5', label: 'Opus 5.5', input: 4, output: 20, cacheRead: 0.2 },
+  FABLES['5.2'],
+]
+
+/** Puts the chosen Fable version on the top rung; anything unrecognised keeps 5.2. */
+export function useFable(version: unknown): ModelInfo {
+  const v: FableVersion = version === '5.1' ? '5.1' : '5.2'
+  MODELS[3] = FABLES[v]
+  return MODELS[3]
+}
 
 export const RUNGS = MODELS.length * EFFORTS.length
 export const TOP = RUNGS - 1
@@ -113,8 +128,8 @@ export function classifyHeuristic(text: string): { rung: number; reason: string 
 
 /* ---------------------------------------------------------- Haiku grading */
 
-export const CLASSIFIER_SYSTEM = `You route a coding assistant's next turn to the cheapest model and reasoning effort that will do it well.
-Models, cheapest first: haiku (Haiku 5.5, $0.10/$0.50 per MTok — fastest; classification, lookups, short answers, mechanical edits), sonnet (Sonnet 5.5, $2/$10 per MTok — strong everyday coding), opus (Opus 5.5, $4/$20 — hard multi-file engineering, design, subtle debugging), fable (Fable 5.1, $10/$50 — only for the hardest reasoning, novel algorithms, long-horizon autonomous builds, or after cheaper models failed).
+export const classifierSystem = (fable: ModelInfo = MODELS[3]) => `You route a coding assistant's next turn to the cheapest model and reasoning effort that will do it well.
+Models, cheapest first: haiku (Haiku 5.5, $0.10/$0.50 per MTok — fastest; classification, lookups, short answers, mechanical edits), sonnet (Sonnet 5.5, $2/$10 per MTok — strong everyday coding), opus (Opus 5.5, $4/$20 — hard multi-file engineering, design, subtle debugging), fable (${fable.label}, $${fable.input}/$${fable.output} — only for the hardest reasoning, novel algorithms, long-horizon autonomous builds, or after cheaper models failed).
 Effort: low | medium | high | xhigh | max. Prefer a stronger model at lower effort over a weaker model at max.
 Guide: chat, lookups, short explanations, git/shell one-liners, mechanical edits -> haiku low/medium (haiku skips checks at low, so use medium for anything with tool use). Longer explanations, small scripts -> haiku high or sonnet medium. Single-file edits, scripts, small fixes, tests -> sonnet high. Features touching a few files, LLM/agent code, non-trivial debugging -> opus medium. Refactors, migrations, architecture, security, performance -> opus high. Concurrency, flaky failures, end-to-end builds -> opus xhigh. Proofs, novel algorithms, repeated failure -> fable high/xhigh.
 Reply with JSON only: {"model":"haiku|sonnet|opus|fable","effort":"low|medium|high|xhigh|max","reason":"<= 8 words"}`
@@ -158,9 +173,10 @@ type Usage = {
 }
 
 export function costUsd(u: Usage): number {
-  const base = MODELS.find(x => u.model?.includes(x.id)) ?? MODELS.find(x => x.key === 'opus') ?? MODELS[0]
+  // Every Fable version is priced, in case a turn ran on one the setting no longer picks.
+  const base = [...MODELS, ...Object.values(FABLES)].find(x => u.model?.includes(x.id)) ?? MODELS[2]
   const promptTokens = (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0)
-  const m = 'long' in base && promptTokens > 100_000 ? { ...base, ...base.long } : base
+  const m = base.long && promptTokens > 100_000 ? { ...base, ...base.long } : base
   const mtok =
     (u.input_tokens ?? 0) * m.input +
     (u.cache_creation_input_tokens ?? 0) * m.input * 1.25 +
